@@ -1,5 +1,5 @@
 {
-  "name": "Dh한국 V9",
+  "name": "Dh한국 V10",
   "short_name": "Dh한국",
   "start_url": "./",
   "display": "standalone",
@@ -20,5 +20,5 @@
       "purpose": "any maskable"
     }
   ],
-  "description": "Smart Korean Learning — Quiz Pro, SRS, OCR và Level"
+  "description": "Learn Korean Smarter Every Day. — OCR, Flashcards, Smart SRS và Quiz Pro."
 }

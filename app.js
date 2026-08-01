@@ -365,7 +365,7 @@ if(filteredIds.length>1)position=(position+1)%filteredIds.length;
 render();
 }
 
-function renderHome(){renderDailyGoal();renderLevel();
+function renderHome(){renderDailyGoal();renderLevel();renderDailyChallenge();
 const list=$('lessonList');list.innerHTML='';
 lessons.forEach((l,index)=>{
 const checked=l.cards.filter(c=>c.checked).length;
@@ -468,7 +468,7 @@ function renderReview(){
     row.append('🧠',main,open);list.append(row);
   });
 }
-function renderStats(){renderActivityChart();
+function renderStats(){renderActivityChart();renderV10Insights();
   const box = $('statsCards');
   if (!box) return;
 
@@ -1074,7 +1074,7 @@ async function saveOcrCards(){
 }
 
 
-let quizState={questions:[],index:0,score:0,answered:false,mode:'all',requestedCount:30,timerSeconds:0,timerId:null};
+let quizState={questions:[],index:0,score:0,answered:false,mode:'all',requestedCount:30,timerSeconds:0,timerId:null,combo:0,bestCombo:0};
 
 function shuffle(array){
   return [...array].sort(()=>Math.random()-0.5);
@@ -1161,11 +1161,11 @@ function startQuiz(mode){
     index:0,
     score:0,
     answered:false,
-    mode:selectedMode,requestedCount,timerSeconds,timerId:null
+    mode:selectedMode,requestedCount,timerSeconds,timerId:null,combo:0,bestCombo:0
   };
 
   if($('quizMode'))$('quizMode').value=selectedMode;
-  updateQuizBestScore();
+  updateQuizBestScore();if($('quizCombo'))$('quizCombo').textContent='🔥 Combo 0';DhV10.renderQuizHistory($('quizHistory'));
   showView('quizView');
   startQuizTimer();
   renderQuizQuestion();
@@ -1177,20 +1177,24 @@ function renderQuizQuestion(){
 
   if(!q){
     stopQuizTimer();saveQuizBestScore();
+    const accuracy=Math.round(quizState.score/Math.max(total,1)*100);
+    DhV10.saveQuizResult({score:quizState.score,total,mode:quizState.mode,accuracy,bestCombo:quizState.bestCombo});
+    DhV10.renderQuizHistory($('quizHistory'));
+    if($('quizAccuracy'))$('quizAccuracy').textContent=`Độ chính xác: ${accuracy}% · Combo tốt nhất: ${quizState.bestCombo}`;
 
     $('quizProgress').textContent='Hoàn thành';
     $('quizProgressBar').style.width='100%';
     $('quizQuestion').textContent=`Bạn đúng ${quizState.score}/${total} câu`;
     $('quizOptions').innerHTML='';
 
-    const percent=Math.round(quizState.score/Math.max(total,1)*100);
+    const percent=accuracy;
     $('quizFeedback').textContent=
       percent===100 ? 'Xuất sắc! 🎉' :
       percent>=80 ? 'Rất tốt! 🌟' :
       percent>=60 ? 'Làm tốt lắm!' :
       'Hãy ôn lại rồi thử tiếp nhé 💪';
 
-    $('quizNext').textContent='Làm lại 30 câu';
+    $('quizNext').textContent=`Làm lại ${quizState.requestedCount} câu`;
     $('quizNext').disabled=false;
     $('quizNext').onclick=()=>startQuiz(quizState.mode);
     return;
@@ -1224,10 +1228,11 @@ function renderQuizQuestion(){
       recordActivity('quiz',1);DhV9.addXp(option===q.card.meaning?5:1);
 
       if(option===q.card.meaning){
-        quizState.score+=1;
+        quizState.score+=1;quizState.combo+=1;quizState.bestCombo=Math.max(quizState.bestCombo,quizState.combo);
         button.classList.add('correct');
-        $('quizFeedback').textContent='Đúng rồi ✅';
+        $('quizFeedback').textContent=quizState.combo>=3?`Đúng rồi ✅ · Combo ${quizState.combo}!`:'Đúng rồi ✅';
       }else{
+        quizState.combo=0;
         button.classList.add('wrong');
         $('quizFeedback').textContent=`Đáp án đúng: ${q.card.meaning}`;
 
@@ -1239,7 +1244,7 @@ function renderQuizQuestion(){
       }
 
       [...box.children].forEach(child=>child.disabled=true);
-      $('quizNext').disabled=false;renderLevel();
+      $('quizNext').disabled=false;renderLevel();if($('quizCombo'))$('quizCombo').textContent=`🔥 Combo ${quizState.combo}`;
       $('quizProgressBar').style.width=
         `${Math.round((quizState.index+1)/Math.max(total,1)*100)}%`;
     };
@@ -1270,6 +1275,11 @@ function renderAchievements(){
 }
 
 function events(){
+$('dailyChallengeAction').onclick=handleDailyChallenge;
+$('noteCard').onclick=openNoteDialog;
+$('closeNote').onclick=()=>$('noteDialog').close();
+$('saveNote').onclick=saveCurrentNote;
+$('deleteNote').onclick=deleteCurrentNote;
 $('editDailyGoal').onclick=editDailyGoal;
 $('openRandomPractice').onclick=startRandomPractice;
 $('restoreAutoBackup').onclick=restoreAutoBackup;
@@ -1277,7 +1287,7 @@ $('srsAgain').onclick=()=>gradeCurrentCard('again');
 $('srsHard').onclick=()=>gradeCurrentCard('hard');
 $('srsGood').onclick=()=>gradeCurrentCard('good');
 $('srsEasy').onclick=()=>gradeCurrentCard('easy');
-$('openQuiz').onclick=()=>startQuiz('all');
+$('openQuiz').onclick=()=>{DhV10.renderQuizHistory($('quizHistory'));startQuiz('all')};
 $('restartQuiz').onclick=()=>startQuiz($('quizMode').value);
 $('quizMode').onchange=updateQuizBestScore;$('quizCount').onchange=updateQuizBestScore;
 $('openAchievements').onclick=()=>{renderAchievements();showView('achievementsView')};

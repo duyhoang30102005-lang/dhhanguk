@@ -1,10 +1,10 @@
 
-const CACHE = 'dh-hanguk-v9-smart-learning';
+const CACHE = 'dh-hanguk-v10-ultimate-lts';
 const ASSETS = [
   './',
   'index.html',
   'styles.css',
-  'app.js','js/v9-features.js',
+  'app.js','js/v9-features.js','js/v10-features.js',
   'migration.js',
   'cards.json',
   'lessons.json',

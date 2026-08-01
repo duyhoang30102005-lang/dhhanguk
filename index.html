@@ -16,19 +16,19 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="stylesheet" href="styles.css">
-  <title>Dh한국 — Learn Korean Smarter</title>
+  <title>Dh한국 — Learn Korean Smarter Every Day.</title>
 </head>
 <body>
 <div id="splashScreen" class="splash-screen">
   <div class="splash-logo">Dh<span>한국</span></div>
-  <p>Smart Korean Learning</p>
+  <p>Learn Korean Smarter Every Day.</p>
   <div class="splash-loader"><span></span></div>
 </div>
 <div id="app">
   <header class="app-header">
     <div>
       <h1><img class="brand-mark" src="icons/icon-192.png" alt="">Dh한국</h1>
-      <p id="headerSub">V9 Smart Learning</p>
+      <p id="headerSub">V10 Ultimate · LTS</p>
     </div>
     <div class="header-actions">
       <button class="icon-button" id="darkMode">🌙</button>
@@ -40,9 +40,9 @@
   <main>
     <section class="view active" id="homeView">
       <div class="hero">
-        <p class="eyebrow">DH HANGUK · VERSION 9</p>
+        <p class="eyebrow">DH HANGUK · VERSION 10</p>
         <h2 id="greeting">안녕하세요! Học thông minh hơn mỗi ngày</h2>
-        <p>OCR ảnh, SRS, Quiz, thống kê và quản lý bài học trong một ứng dụng.</p>
+        <p>Learn Korean Smarter Every Day. · OCR, SRS, Quiz Pro và quản lý bài học.</p>
       </div>
 
       <section class="welcome-strip">
@@ -84,6 +84,15 @@
         <div class="progress"><span id="dailyGoalBar" style="width:0%"></span></div>
       </section>
 
+      <section class="daily-challenge-card" id="dailyChallengeCard">
+        <div class="daily-challenge-icon">⚡</div>
+        <div class="daily-challenge-main">
+          <div class="daily-challenge-head"><b>Thử thách hôm nay</b><small id="dailyChallengeText">0 / 20 lượt học</small></div>
+          <div class="progress"><span id="dailyChallengeBar" style="width:0%"></span></div>
+        </div>
+        <button id="dailyChallengeAction" type="button">Bắt đầu</button>
+      </section>
+
       <div class="home-actions">
         <button id="addLesson" class="primary">＋ Thêm bài học</button>
         <button id="openAllCards">📚 Học tất cả</button>
@@ -108,6 +117,7 @@
     <section class="view" id="studyView">
       <div class="study-toolbar">
         <button id="backHome" class="secondary">← Trang chủ</button>
+        <button id="noteCard">🗒️ Ghi chú</button>
         <button id="editCard">✏️ Sửa</button>
         <button id="addCard">＋ Thêm</button>
       </div>
@@ -178,6 +188,15 @@
     <section class="view" id="statsView">
       <h2>📊 Thống kê</h2>
       <div id="statsCards" class="stats-list"></div>
+      <section class="v10-insights">
+        <h3>30 ngày gần nhất</h3>
+        <div class="v10-insight-grid">
+          <article><b id="insightActiveDays">0</b><small>Ngày hoạt động</small></article>
+          <article><b id="insightStudy">0</b><small>Lượt học</small></article>
+          <article><b id="insightQuiz">0</b><small>Câu Quiz</small></article>
+          <article><b id="insightOcr">0</b><small>Từ OCR</small></article>
+        </div>
+      </section>
       <section class="activity-section">
         <div class="activity-head">
           <h3>Hoạt động 7 ngày gần nhất</h3>
@@ -194,7 +213,7 @@
           <h2>📝 Quiz 30 câu</h2>
           <small id="quizBestScore">Điểm cao nhất: chưa có</small>
         </div>
-        <div class="quiz-status"><p id="quizProgress">Câu 1 / 30</p><b id="quizTimer"></b></div>
+        <div class="quiz-status"><p id="quizProgress">Câu 1 / 30</p><b id="quizCombo">🔥 Combo 0</b><b id="quizTimer"></b></div>
       </div>
 
       <div class="quiz-mode-bar">
@@ -222,6 +241,10 @@
         <p id="quizFeedback" class="quiz-feedback"></p>
         <button id="quizNext" class="primary" disabled>Câu tiếp theo</button>
       </div>
+      <section class="quiz-history-section">
+        <div class="activity-head"><h3>📚 Lịch sử gần đây</h3><small id="quizAccuracy"></small></div>
+        <div id="quizHistory"></div>
+      </section>
     </section>
 
     <section class="view" id="achievementsView">
@@ -295,6 +318,13 @@
   </div>
 </dialog>
 
+
+
+<dialog id="noteDialog">
+  <div class="dialog-header"><div><h2>🗒️ Ghi chú từ vựng</h2><small id="noteWord"></small></div><button class="close-button" id="closeNote" type="button">×</button></div>
+  <label>Ghi chú cá nhân<textarea id="noteText" rows="7" placeholder="Cách nhớ, ngữ pháp liên quan, lỗi thường gặp..."></textarea></label>
+  <div class="dialog-actions"><button id="deleteNote" class="secondary" type="button">Xóa ghi chú</button><button id="saveNote" class="primary" type="button">💾 Lưu ghi chú</button></div>
+</dialog>
 
 <dialog id="ocrDialog" class="ocr-dialog">
   <div class="dialog-header">
@@ -377,6 +407,7 @@
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="migration.js"></script>
 <script src="js/v9-features.js"></script>
+<script src="js/v10-features.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

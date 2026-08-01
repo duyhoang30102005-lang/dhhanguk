@@ -519,3 +519,17 @@ body{
 .quiz-mode-bar{grid-template-columns:minmax(140px,1fr) minmax(100px,.75fr) minmax(120px,.8fr) auto}
 .quiz-status{display:flex;align-items:center;gap:12px}#quizTimer{color:var(--brand-blue);min-width:72px;text-align:right}
 @media(max-width:680px){.quiz-mode-bar{grid-template-columns:1fr 1fr}.quiz-mode-bar button{grid-column:1/-1}.level-card{grid-template-columns:auto 1fr}.longest-streak{grid-column:1/-1;display:flex;justify-content:center;align-items:center;gap:8px}.longest-streak span,.longest-streak small,.longest-streak b{display:inline}}
+
+/* Dh한국 V10 Ultimate · LTS */
+.daily-challenge-card{display:grid;grid-template-columns:auto 1fr auto;gap:13px;align-items:center;margin:0 0 16px;padding:14px;border:1px solid var(--line);border-radius:19px;background:var(--panel);box-shadow:0 12px 30px rgba(37,99,235,.08)}
+.daily-challenge-card.complete{border-color:#22c55e;background:color-mix(in srgb,#22c55e 7%,var(--panel))}
+.daily-challenge-icon{width:46px;height:46px;display:grid;place-items:center;border-radius:15px;font-size:24px;background:linear-gradient(135deg,#f59e0b,#ef4444)}
+.daily-challenge-main{min-width:0}.daily-challenge-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px}.daily-challenge-head small{color:var(--muted)}
+.quiz-status{flex-wrap:wrap;justify-content:flex-end}#quizCombo{color:#f97316;white-space:nowrap}
+.quiz-history-section,.v10-insights{margin-top:16px;padding:15px;border:1px solid var(--line);border-radius:18px;background:var(--panel)}
+.quiz-history-item{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid var(--line)}.quiz-history-item:last-child{border-bottom:0}.quiz-history-item div:last-child{text-align:right}
+.quiz-history-item b,.quiz-history-item span{display:block;font-weight:900}.quiz-history-item small{display:block;color:var(--muted);margin-top:3px}
+.v10-insight-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}.v10-insight-grid article{padding:14px;text-align:center;border:1px solid var(--line);border-radius:15px;background:var(--bg)}
+.v10-insight-grid b{display:block;font-size:24px}.v10-insight-grid small{display:block;color:var(--muted);margin-top:4px}
+#noteDialog{max-width:560px}#noteDialog textarea{min-height:180px}
+@media(max-width:620px){.daily-challenge-card{grid-template-columns:auto 1fr}.daily-challenge-card button{grid-column:1/-1;width:100%}.v10-insight-grid{grid-template-columns:repeat(2,1fr)}}
