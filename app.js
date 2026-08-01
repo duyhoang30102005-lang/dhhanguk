@@ -467,6 +467,238 @@ function renderOcrRows(){
   });
 }
 
+
+function loadImageFromFile(file){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror=()=>{
+      URL.revokeObjectURL(url);
+      reject(new Error('Không đọc được ảnh'));
+    };
+    img.src=url;
+  });
+}
+
+function otsuThreshold(gray){
+  const histogram=new Array(256).fill(0);
+  gray.forEach(value=>histogram[value]++);
+  const total=gray.length;
+
+  let sum=0;
+  for(let i=0;i<256;i++)sum+=i*histogram[i];
+
+  let sumBackground=0;
+  let weightBackground=0;
+  let maxVariance=0;
+  let threshold=160;
+
+  for(let i=0;i<256;i++){
+    weightBackground+=histogram[i];
+    if(!weightBackground)continue;
+
+    const weightForeground=total-weightBackground;
+    if(!weightForeground)break;
+
+    sumBackground+=i*histogram[i];
+
+    const meanBackground=sumBackground/weightBackground;
+    const meanForeground=(sum-sumBackground)/weightForeground;
+    const variance=
+      weightBackground*
+      weightForeground*
+      (meanBackground-meanForeground)*
+      (meanBackground-meanForeground);
+
+    if(variance>maxVariance){
+      maxVariance=variance;
+      threshold=i;
+    }
+  }
+
+  return threshold;
+}
+
+async function preprocessOcrImage(file,mode='document'){
+  const img=await loadImageFromFile(file);
+
+  const maxWidth=2400;
+  const scale=Math.max(1,Math.min(3,maxWidth/img.width));
+  const width=Math.round(img.width*scale);
+  const height=Math.round(img.height*scale);
+
+  const canvas=document.createElement('canvas');
+  canvas.width=width;
+  canvas.height=height;
+
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+  ctx.drawImage(img,0,0,width,height);
+
+  const imageData=ctx.getImageData(0,0,width,height);
+  const data=imageData.data;
+  const gray=new Uint8Array(width*height);
+
+  for(let i=0,j=0;i<data.length;i+=4,j++){
+    let value=Math.round(
+      data[i]*0.299+
+      data[i+1]*0.587+
+      data[i+2]*0.114
+    );
+
+    const contrast=
+      mode==='document' ? 1.65 :
+      mode==='screen' ? 1.35 :
+      1.2;
+
+    value=Math.max(
+      0,
+      Math.min(255,(value-128)*contrast+128)
+    );
+
+    gray[j]=value;
+  }
+
+  if(mode==='document'){
+    const threshold=otsuThreshold(gray);
+
+    for(let i=0,j=0;i<data.length;i+=4,j++){
+      const value=
+        gray[j]>Math.min(220,threshold+18)
+          ? 255
+          : 0;
+
+      data[i]=value;
+      data[i+1]=value;
+      data[i+2]=value;
+      data[i+3]=255;
+    }
+  }else{
+    for(let i=0,j=0;i<data.length;i+=4,j++){
+      const value=gray[j];
+
+      data[i]=value;
+      data[i+1]=value;
+      data[i+2]=value;
+      data[i+3]=255;
+    }
+  }
+
+  ctx.putImageData(imageData,0,0);
+
+  const preview=$('ocrProcessedPreview');
+  if(preview){
+    preview.width=width;
+    preview.height=height;
+    preview.getContext('2d').drawImage(canvas,0,0);
+    preview.classList.remove('hidden');
+  }
+
+  if($('ocrImagePreview')){
+    $('ocrImagePreview').classList.add('hidden');
+  }
+
+  return canvas;
+}
+
+function levenshtein(a,b){
+  const rows=a.length+1;
+  const columns=b.length+1;
+  const table=Array.from(
+    {length:rows},
+    ()=>new Array(columns).fill(0)
+  );
+
+  for(let row=0;row<rows;row++)table[row][0]=row;
+  for(let column=0;column<columns;column++)table[0][column]=column;
+
+  for(let row=1;row<rows;row++){
+    for(let column=1;column<columns;column++){
+      const cost=a[row-1]===b[column-1] ? 0 : 1;
+
+      table[row][column]=Math.min(
+        table[row-1][column]+1,
+        table[row][column-1]+1,
+        table[row-1][column-1]+cost
+      );
+    }
+  }
+
+  return table[a.length][b.length];
+}
+
+function compactHangul(text){
+  return cleanOcrPart(text).replace(/\s+/g,'');
+}
+
+function enrichOcrRows(rows){
+  const known=allCards()
+    .map(card=>({
+      ko:compactHangul(card.ko),
+      originalKo:card.ko,
+      pron:card.pron||'',
+      meaning:card.meaning||''
+    }))
+    .filter(item=>item.ko);
+
+  return rows.map(row=>{
+    const compact=compactHangul(row.ko);
+    const exact=known.find(item=>item.ko===compact);
+
+    if(exact){
+      return{
+        ko:exact.originalKo,
+        pron:row.pron||exact.pron,
+        meaning:row.meaning||exact.meaning,
+        suggestion:''
+      };
+    }
+
+    let best=null;
+
+    known.forEach(item=>{
+      const distance=levenshtein(compact,item.ko);
+      const limit=
+        Math.max(compact.length,item.ko.length)<=3
+          ? 1
+          : 2;
+
+      if(
+        distance<=limit &&
+        (!best || distance<best.distance)
+      ){
+        best={...item,distance};
+      }
+    });
+
+    const smartFix=
+      $('ocrSmartFix')
+        ? $('ocrSmartFix').checked
+        : true;
+
+    if(smartFix && best){
+      return{
+        ko:best.originalKo,
+        pron:row.pron||best.pron,
+        meaning:row.meaning||best.meaning,
+        suggestion:`Đã gợi ý từ gần nhất: ${best.originalKo}`
+      };
+    }
+
+    return{
+      ko:compact||row.ko,
+      pron:row.pron||'',
+      meaning:row.meaning||'',
+      suggestion:''
+    };
+  });
+}
+
 async function recognizeOneImage(file,mode,imageNumber,totalImages){
   const processed=await preprocessOcrImage(file,mode);
   let worker;
