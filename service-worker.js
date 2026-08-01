@@ -1,5 +1,5 @@
 
-const CACHE = 'korean-master-pro-v4-ocr-v1';
+const CACHE = 'korean-master-pro-v5-merged';
 const ASSETS = [
   './',
   'index.html',

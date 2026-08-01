@@ -9,14 +9,14 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="stylesheet" href="styles.css">
-  <title>Korean Master Pro V4</title>
+  <title>Korean Master Pro V5</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>🇰🇷 Korean Master Pro</h1>
-      <p id="headerSub">V4.0 · OCR ảnh từ vựng</p>
+      <p id="headerSub">V5 · OCR thông minh + xóa bài học</p>
     </div>
     <div class="header-actions">
       <button class="icon-button" id="darkMode">🌙</button>
@@ -201,6 +201,21 @@
       <select id="ocrLesson"></select>
     </label>
 
+    <div class="ocr-tip">
+      <b>Ảnh rõ sẽ chính xác hơn:</b> cắt sát bảng từ vựng, giữ ảnh thẳng,
+      đủ sáng và để chữ chiếm phần lớn khung hình.
+    </div>
+    <label>Kiểu ảnh
+      <select id="ocrMode">
+        <option value="document">Ảnh chụp trang giấy</option>
+        <option value="screen">Ảnh chụp màn hình</option>
+        <option value="clear">Ảnh rõ, nền trắng</option>
+      </select>
+    </label>
+    <label class="smart-toggle">
+      <input id="ocrSmartFix" type="checkbox" checked>
+      Tự sửa khoảng trắng và gợi ý từ gần giống trong dữ liệu hiện có
+    </label>
     <div class="ocr-pick-grid">
       <button id="takePhoto" type="button">📷 Chụp ảnh</button>
       <button id="choosePhoto" type="button">🖼️ Chọn ảnh</button>
@@ -210,7 +225,7 @@
     <input id="ocrFileInput" type="file" accept="image/*" hidden>
 
     <div id="ocrPreviewWrap" class="ocr-image-wrap hidden">
-      <img id="ocrImagePreview" alt="Ảnh cần nhận diện">
+      <img id="ocrImagePreview" alt="Ảnh cần nhận diện"><canvas id="ocrProcessedPreview" class="hidden"></canvas>
     </div>
 
     <div id="ocrProgressWrap" class="ocr-progress hidden">
@@ -227,7 +242,7 @@
     <div class="ocr-result-head">
       <div>
         <h3>Kiểm tra trước khi nhập</h3>
-        <small>Có thể sửa lại từ và nghĩa trước khi lưu.</small>
+        <small>Có thể sửa từ, phiên âm và nghĩa trước khi lưu.</small>
       </div>
       <button id="addOcrRow" type="button">＋ Dòng</button>
     </div>

@@ -7,6 +7,13 @@ function store(mode='readonly'){return db.transaction(LESSONS,mode).objectStore(
 function getAllLessons(){return new Promise((res,rej)=>{const r=store().getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 function putLesson(l){return new Promise((res,rej)=>{const r=store('readwrite').put(l);r.onsuccess=res;r.onerror=()=>rej(r.error)})}
 function putAllLessons(list){return Promise.all(list.map(putLesson))}
+function deleteLessonRecord(id){
+  return new Promise((res,rej)=>{
+    const r=store('readwrite').delete(id);
+    r.onsuccess=()=>res();
+    r.onerror=()=>rej(r.error);
+  });
+}
 async function init(){
 db=await openDB();
 lessons=await getAllLessons();
@@ -22,9 +29,67 @@ await putAllLessons(lessons)
 currentLessonId=lessons[0]?.id||null
 }
 function lesson(){return lessons.find(l=>l.id===currentLessonId)}function current(){const id=filteredIds[position];return lesson()?.cards.find(c=>c.id===id)}
+
+async function deleteLesson(id){
+  const target=lessons.find(item=>item.id===id);
+  if(!target)return;
+
+  if(lessons.length<=1){
+    alert('Cần giữ lại ít nhất 1 bài học.');
+    return;
+  }
+
+  const wordCount=target.cards.length;
+  const message=
+    `Xóa bài học “${target.title}”?\n\n`+
+    `Bài này có ${wordCount} từ. Toàn bộ từ trong bài sẽ bị xóa khỏi thiết bị.`;
+
+  if(!confirm(message))return;
+
+  await deleteLessonRecord(id);
+  lessons=lessons.filter(item=>item.id!==id);
+
+  if(currentLessonId===id){
+    currentLessonId=lessons[0]?.id||null;
+    filteredIds=[];
+    position=0;
+  }
+
+  renderHome();
+  renderReview();
+  renderStats();
+  renderList();
+
+  showView('homeView');
+  alert(`Đã xóa bài học “${target.title}”.`);
+}
+
 function renderHome(){
 const list=$('lessonList');list.innerHTML='';
-lessons.forEach(l=>{const checked=l.cards.filter(c=>c.checked).length;const b=document.createElement('button');b.className='lesson-card';b.innerHTML=`<div class="lesson-card-top"><div><strong>📘 ${l.title}</strong><small>${l.book}</small></div><span>${l.cards.length} từ</span></div><div class="progress"><span style="width:${checked/Math.max(l.cards.length,1)*100}%"></span></div>`;b.onclick=()=>openLesson(l.id);list.append(b)});
+lessons.forEach(l=>{
+const checked=l.cards.filter(c=>c.checked).length;
+const wrap=document.createElement('div');
+wrap.className='lesson-card-wrap';
+
+const b=document.createElement('button');
+b.className='lesson-card';
+b.innerHTML=`<div class="lesson-card-top"><div><strong>📘 ${l.title}</strong><small>${l.book}</small></div><span>${l.cards.length} từ</span></div><div class="progress"><span style="width:${checked/Math.max(l.cards.length,1)*100}%"></span></div>`;
+b.onclick=()=>openLesson(l.id);
+
+const remove=document.createElement('button');
+remove.type='button';
+remove.className='delete-lesson-button';
+remove.title='Xóa bài học';
+remove.setAttribute('aria-label',`Xóa bài học ${l.title}`);
+remove.textContent='🗑️';
+remove.onclick=e=>{
+  e.stopPropagation();
+  deleteLesson(l.id);
+};
+
+wrap.append(b,remove);
+list.append(wrap)
+});
 const a=allCards(),learned=a.filter(c=>c.checked).length,review=a.filter(c=>!c.checked).length;
 $('hardCount').textContent=`${a.filter(c=>c.hard).length} từ`;$('favoriteCount').textContent=`${a.filter(c=>c.favorite).length} từ`;$('reviewCount').textContent=`${review} từ`;
 $('totalCards').textContent=a.length;$('learnedCards').textContent=learned;$('reviewCards').textContent=review;
@@ -156,7 +221,7 @@ function openOcrDialog(){
   fillOcrLessons();
   ocrSelectedFile = null;
   ocrParsedRows = [];
-  $('ocrImagePreview').removeAttribute('src');
+  $('ocrImagePreview').removeAttribute('src');$('ocrImagePreview').classList.remove('hidden');$('ocrProcessedPreview').classList.add('hidden');
   $('ocrPreviewWrap').classList.add('hidden');
   $('ocrProgressWrap').classList.add('hidden');
   $('ocrResultSection').classList.add('hidden');
@@ -178,7 +243,7 @@ function selectOcrImage(file){
   const url = URL.createObjectURL(file);
   $('ocrImagePreview').src = url;
   $('ocrImagePreview').onload = () => URL.revokeObjectURL(url);
-  $('ocrPreviewWrap').classList.remove('hidden');
+  $('ocrPreviewWrap').classList.remove('hidden');$('ocrImagePreview').classList.remove('hidden');$('ocrProcessedPreview').classList.add('hidden');
   $('ocrResultSection').classList.add('hidden');
   $('runOcr').disabled = false;
 }
@@ -262,97 +327,126 @@ function parseOcrText(raw){
 }
 
 function renderOcrRows(){
-  const container = $('ocrRows');
-  container.innerHTML = '';
+  const container=$('ocrRows');
+  container.innerHTML='';
 
   if(!ocrParsedRows.length){
-    container.innerHTML =
-      '<div class="ocr-empty">Chưa tách được từ nào. Mở “Xem chữ OCR gốc”, sửa nội dung rồi bấm “Tách lại danh sách”.</div>';
+    container.innerHTML=
+      '<div class="ocr-empty">Chưa tách được từ nào. Mở “Xem chữ OCR gốc”, sửa rồi bấm “Tách lại danh sách”.</div>';
     return;
   }
 
-  ocrParsedRows.forEach((row, index) => {
-    const item = document.createElement('div');
-    item.className = 'ocr-row';
+  ocrParsedRows.forEach((row,index)=>{
+    const item=document.createElement('div');
+    item.className='ocr-row';
 
-    const ko = document.createElement('input');
-    ko.className = 'ocr-ko';
-    ko.placeholder = 'Tiếng Hàn';
-    ko.value = row.ko || '';
-    ko.oninput = event => {
-      ocrParsedRows[index].ko = event.target.value;
-    };
+    const ko=document.createElement('input');
+    ko.className='ocr-ko';
+    ko.placeholder='Tiếng Hàn';
+    ko.value=row.ko||'';
+    ko.oninput=event=>ocrParsedRows[index].ko=event.target.value;
 
-    const meaning = document.createElement('input');
-    meaning.className = 'ocr-meaning';
-    meaning.placeholder = 'Nghĩa tiếng Việt';
-    meaning.value = row.meaning || '';
-    meaning.oninput = event => {
-      ocrParsedRows[index].meaning = event.target.value;
-    };
+    const pron=document.createElement('input');
+    pron.className='ocr-pron';
+    pron.placeholder='Phiên âm';
+    pron.value=row.pron||'';
+    pron.oninput=event=>ocrParsedRows[index].pron=event.target.value;
 
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.className = 'ocr-row-remove';
-    remove.textContent = '🗑';
-    remove.onclick = () => {
-      ocrParsedRows.splice(index, 1);
+    const meaning=document.createElement('input');
+    meaning.className='ocr-meaning';
+    meaning.placeholder='Nghĩa tiếng Việt';
+    meaning.value=row.meaning||'';
+    meaning.oninput=event=>ocrParsedRows[index].meaning=event.target.value;
+
+    const remove=document.createElement('button');
+    remove.type='button';
+    remove.className='ocr-row-remove';
+    remove.textContent='🗑';
+    remove.onclick=()=>{
+      ocrParsedRows.splice(index,1);
       renderOcrRows();
     };
 
-    item.append(ko, meaning, remove);
+    item.append(ko,pron,meaning,remove);
+
+    if(row.suggestion){
+      const note=document.createElement('small');
+      note.className='ocr-suggestion';
+      note.textContent=row.suggestion;
+      item.append(note);
+    }
+
     container.append(item);
   });
 }
 
 async function runImageOcr(){
-  if(!ocrSelectedFile) return;
+  if(!ocrSelectedFile)return;
   if(!window.Tesseract){
     alert('Không tải được bộ OCR. Hãy kiểm tra mạng rồi thử lại.');
     return;
   }
 
-  $('runOcr').disabled = true;
+  $('runOcr').disabled=true;
   $('ocrProgressWrap').classList.remove('hidden');
   $('ocrResultSection').classList.add('hidden');
-  $('ocrProgressBar').style.width = '2%';
-  $('ocrProgressText').textContent = 'Đang tải bộ nhận diện tiếng Hàn…';
+  $('ocrProgressBar').style.width='2%';
+  $('ocrProgressText').textContent='Đang làm rõ ảnh…';
 
   let worker;
   try{
-    worker = await Tesseract.createWorker('kor+vie+eng', 1, {
+    const mode=$('ocrMode')?.value||'document';
+    const processed=await preprocessOcrImage(ocrSelectedFile,mode);
+
+    worker=await Tesseract.createWorker('kor+vie+eng',1,{
       logger(message){
-        const progress = Math.max(0, Math.min(1, message.progress || 0));
-        if(message.status === 'recognizing text'){
-          $('ocrProgressBar').style.width = `${Math.round(progress * 100)}%`;
-          $('ocrProgressText').textContent =
-            `Đang nhận diện chữ… ${Math.round(progress * 100)}%`;
+        const progress=Math.max(0,Math.min(1,message.progress||0));
+        if(message.status==='recognizing text'){
+          $('ocrProgressBar').style.width=`${Math.round(progress*100)}%`;
+          $('ocrProgressText').textContent=
+            `Đang nhận diện chữ… ${Math.round(progress*100)}%`;
         }else{
-          $('ocrProgressText').textContent =
-            message.status ? `OCR: ${message.status}` : 'Đang xử lý ảnh…';
+          $('ocrProgressText').textContent=
+            message.status?`OCR: ${message.status}`:'Đang xử lý ảnh…';
         }
       }
     });
 
-    const result = await worker.recognize(ocrSelectedFile, {
-      rotateAuto: true
+    await worker.setParameters({
+      tessedit_pageseg_mode:'6',
+      preserve_interword_spaces:'1',
+      user_defined_dpi:'300'
     });
 
-    const raw = result?.data?.text || '';
-    $('ocrRawText').value = raw;
-    ocrParsedRows = parseOcrText(raw);
+    const first=await worker.recognize(processed,{rotateAuto:true});
+    let raw=first?.data?.text||'';
+
+    if(mode==='document' && (raw.match(/[\uAC00-\uD7A3]/g)||[]).length<3){
+      $('ocrProgressText').textContent='Đang kiểm tra lại bằng ảnh gốc…';
+      const second=await worker.recognize(ocrSelectedFile,{rotateAuto:true});
+      const rawSecond=second?.data?.text||'';
+      if((rawSecond.match(/[\uAC00-\uD7A3]/g)||[]).length >
+         (raw.match(/[\uAC00-\uD7A3]/g)||[]).length){
+        raw=rawSecond;
+      }
+    }
+
+    $('ocrRawText').value=raw;
+    ocrParsedRows=enrichOcrRows(parseOcrText(raw));
     renderOcrRows();
-    $('ocrProgressBar').style.width = '100%';
-    $('ocrProgressText').textContent =
+
+    $('ocrProgressBar').style.width='100%';
+    $('ocrProgressText').textContent=
       `Hoàn tất: tìm thấy ${ocrParsedRows.length} dòng có chữ Hàn.`;
     $('ocrResultSection').classList.remove('hidden');
   }catch(error){
     console.error(error);
-    alert(`OCR chưa thực hiện được: ${error.message || error}`);
-    $('ocrProgressText').textContent = 'OCR thất bại. Hãy thử ảnh rõ hơn hoặc kiểm tra mạng.';
+    alert(`OCR chưa thực hiện được: ${error.message||error}`);
+    $('ocrProgressText').textContent=
+      'OCR thất bại. Hãy thử ảnh rõ hơn hoặc cắt sát phần từ vựng.';
   }finally{
-    if(worker) await worker.terminate();
-    $('runOcr').disabled = false;
+    if(worker)await worker.terminate();
+    $('runOcr').disabled=false;
   }
 }
 
@@ -367,6 +461,7 @@ async function saveOcrCards(){
   const validRows = ocrParsedRows
     .map(row => ({
       ko: cleanOcrPart(row.ko),
+      pron: cleanOcrPart(row.pron),
       meaning: cleanOcrPart(row.meaning)
     }))
     .filter(row => row.ko && containsHangul(row.ko));
@@ -390,7 +485,7 @@ async function saveOcrCards(){
     target.cards.push({
       id: `card-${Date.now()}-${addedCount}`,
       ko: row.ko,
-      pron: '',
+      pron: row.pron,
       meaning: row.meaning,
       example_ko: '',
       example_vi: '',
@@ -439,11 +534,11 @@ $('ocrCameraInput').onchange=e=>selectOcrImage(e.target.files[0]);
 $('ocrFileInput').onchange=e=>selectOcrImage(e.target.files[0]);
 $('runOcr').onclick=runImageOcr;
 $('parseRawAgain').onclick=()=>{
-  ocrParsedRows=parseOcrText($('ocrRawText').value);
+  ocrParsedRows=enrichOcrRows(parseOcrText($('ocrRawText').value));
   renderOcrRows();
 };
 $('addOcrRow').onclick=()=>{
-  ocrParsedRows.push({ko:'',meaning:''});
+  ocrParsedRows.push({ko:'',pron:'',meaning:'',suggestion:''});
   renderOcrRows();
 };
 $('saveOcrCards').onclick=saveOcrCards;

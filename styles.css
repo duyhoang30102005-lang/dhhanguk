@@ -67,3 +67,45 @@ dialog label{display:block;font-size:12px;font-weight:800;color:var(--accent);ma
   .ocr-row .ocr-ko{grid-column:1/2}
   .ocr-row-remove{grid-column:2;grid-row:1/3}
 }
+
+
+/* Xóa bài học */
+.lesson-card-wrap{
+  position:relative;
+}
+.lesson-card-wrap .lesson-card{
+  padding-right:68px;
+}
+.delete-lesson-button{
+  position:absolute;
+  right:12px;
+  top:50%;
+  transform:translateY(-50%);
+  width:44px;
+  height:44px;
+  padding:0;
+  border-radius:14px;
+  background:color-mix(in srgb,var(--danger) 13%,var(--panel));
+  color:var(--danger);
+  border:1px solid color-mix(in srgb,var(--danger) 30%,var(--line));
+  display:grid;
+  place-items:center;
+  font-size:19px;
+  z-index:2;
+}
+.delete-lesson-button:hover{
+  transform:translateY(-50%) scale(1.04);
+}
+
+/* V5 merged OCR */
+.ocr-tip{background:var(--accent-soft);border:1px solid var(--line);padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.5;margin:10px 0}
+.smart-toggle{display:flex!important;align-items:center;gap:9px;color:var(--text)!important;font-size:13px!important}
+.smart-toggle input{width:20px;height:20px;flex:0 0 auto}
+#ocrProcessedPreview{display:block;max-width:100%;max-height:330px;margin:auto;border-radius:10px}
+.ocr-row{grid-template-columns:minmax(105px,1fr) minmax(100px,1fr) minmax(150px,1.5fr) auto}
+.ocr-suggestion{grid-column:1/-1;color:var(--accent);font-size:12px;padding:2px 4px}
+@media(max-width:600px){
+  .ocr-row{grid-template-columns:1fr auto}
+  .ocr-row .ocr-ko,.ocr-row .ocr-pron,.ocr-row .ocr-meaning{grid-column:1}
+  .ocr-row-remove{grid-column:2;grid-row:1/4}
+}
