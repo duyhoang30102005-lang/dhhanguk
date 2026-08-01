@@ -1,11 +1,4 @@
-# Dh한국 V8
+# Dh한국 V8.5 Branding Edition
 
-Ứng dụng học tiếng Hàn PWA với OCR ảnh, flashcard, SRS, quiz, thống kê,
-quản lý bài học, sao lưu và giao diện V8 mới.
-
-## Cập nhật GitHub
-Upload toàn bộ file trong gói UPDATE lên repository hiện tại và commit.
-Vercel sẽ tự deploy.
-
-## Tên miền đề xuất
-`kr-pro.vercel.app` nếu còn khả dụng.
+Có logo, icon PWA, splash screen, bộ màu thương hiệu, Open Graph và Quiz 30 câu.
+Upload toàn bộ file trong gói UPDATE lên GitHub rồi commit.
