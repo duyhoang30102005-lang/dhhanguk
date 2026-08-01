@@ -139,7 +139,315 @@ function renderStats(){
   });
 }
 
+
+let ocrSelectedFile = null;
+let ocrParsedRows = [];
+
+function fillOcrLessons(){
+  const select = $('ocrLesson');
+  if(!select) return;
+  select.innerHTML = lessons.map(item =>
+    `<option value="${item.id}">${item.title} · ${item.book}</option>`
+  ).join('');
+  select.value = currentLessonId || lessons[0]?.id || '';
+}
+
+function openOcrDialog(){
+  fillOcrLessons();
+  ocrSelectedFile = null;
+  ocrParsedRows = [];
+  $('ocrImagePreview').removeAttribute('src');
+  $('ocrPreviewWrap').classList.add('hidden');
+  $('ocrProgressWrap').classList.add('hidden');
+  $('ocrResultSection').classList.add('hidden');
+  $('runOcr').disabled = true;
+  $('ocrRows').innerHTML = '';
+  $('ocrRawText').value = '';
+  $('ocrProgressBar').style.width = '0%';
+  $('ocrProgressText').textContent = 'Đang chuẩn bị OCR…';
+  $('ocrDialog').showModal();
+}
+
+function selectOcrImage(file){
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    alert('Hãy chọn một file ảnh.');
+    return;
+  }
+  ocrSelectedFile = file;
+  const url = URL.createObjectURL(file);
+  $('ocrImagePreview').src = url;
+  $('ocrImagePreview').onload = () => URL.revokeObjectURL(url);
+  $('ocrPreviewWrap').classList.remove('hidden');
+  $('ocrResultSection').classList.add('hidden');
+  $('runOcr').disabled = false;
+}
+
+function containsHangul(text){
+  return /[\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]/.test(text || '');
+}
+
+function cleanOcrPart(text){
+  return String(text || '')
+    .replace(/[|¦]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/^[•·▪◦\-–—:;,.\s]+|[•·▪◦\-–—:;,.\s]+$/g, '')
+    .trim();
+}
+
+function parseOcrText(raw){
+  const rows = [];
+  const seen = new Set();
+
+  String(raw || '').split(/\r?\n/).forEach(originalLine => {
+    let line = originalLine.trim();
+    if(!line || line.length < 2) return;
+
+    line = line
+      .replace(/^\d+[\s.)\-]+/, '')
+      .replace(/[■□◆◇●○▶▷►]/g, ' ')
+      .trim();
+
+    if(!containsHangul(line)) return;
+
+    let parts = line
+      .split(/\t+|\s{2,}|[|]/)
+      .map(cleanOcrPart)
+      .filter(Boolean);
+
+    if(parts.length < 2){
+      const separatorMatch = line.match(
+        /^(.+?[\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F].*?)\s*[:=–—-]\s*(.+)$/
+      );
+      if(separatorMatch){
+        parts = [cleanOcrPart(separatorMatch[1]), cleanOcrPart(separatorMatch[2])];
+      }
+    }
+
+    let ko = '';
+    let meaning = '';
+
+    if(parts.length >= 2){
+      const hangulIndex = parts.findIndex(containsHangul);
+      if(hangulIndex >= 0){
+        ko = parts[hangulIndex];
+        meaning = parts
+          .filter((_, index) => index !== hangulIndex)
+          .join(' · ');
+      }
+    } else {
+      const tokens = line.split(/\s+/);
+      const koreanTokens = [];
+      const otherTokens = [];
+      tokens.forEach(token => {
+        if(containsHangul(token)) koreanTokens.push(token);
+        else otherTokens.push(token);
+      });
+      ko = cleanOcrPart(koreanTokens.join(' '));
+      meaning = cleanOcrPart(otherTokens.join(' '));
+    }
+
+    ko = cleanOcrPart(ko);
+    meaning = cleanOcrPart(meaning);
+
+    if(!ko || !containsHangul(ko)) return;
+
+    const key = `${ko.toLowerCase()}|${meaning.toLowerCase()}`;
+    if(seen.has(key)) return;
+    seen.add(key);
+    rows.push({ko, meaning});
+  });
+
+  return rows;
+}
+
+function renderOcrRows(){
+  const container = $('ocrRows');
+  container.innerHTML = '';
+
+  if(!ocrParsedRows.length){
+    container.innerHTML =
+      '<div class="ocr-empty">Chưa tách được từ nào. Mở “Xem chữ OCR gốc”, sửa nội dung rồi bấm “Tách lại danh sách”.</div>';
+    return;
+  }
+
+  ocrParsedRows.forEach((row, index) => {
+    const item = document.createElement('div');
+    item.className = 'ocr-row';
+
+    const ko = document.createElement('input');
+    ko.className = 'ocr-ko';
+    ko.placeholder = 'Tiếng Hàn';
+    ko.value = row.ko || '';
+    ko.oninput = event => {
+      ocrParsedRows[index].ko = event.target.value;
+    };
+
+    const meaning = document.createElement('input');
+    meaning.className = 'ocr-meaning';
+    meaning.placeholder = 'Nghĩa tiếng Việt';
+    meaning.value = row.meaning || '';
+    meaning.oninput = event => {
+      ocrParsedRows[index].meaning = event.target.value;
+    };
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'ocr-row-remove';
+    remove.textContent = '🗑';
+    remove.onclick = () => {
+      ocrParsedRows.splice(index, 1);
+      renderOcrRows();
+    };
+
+    item.append(ko, meaning, remove);
+    container.append(item);
+  });
+}
+
+async function runImageOcr(){
+  if(!ocrSelectedFile) return;
+  if(!window.Tesseract){
+    alert('Không tải được bộ OCR. Hãy kiểm tra mạng rồi thử lại.');
+    return;
+  }
+
+  $('runOcr').disabled = true;
+  $('ocrProgressWrap').classList.remove('hidden');
+  $('ocrResultSection').classList.add('hidden');
+  $('ocrProgressBar').style.width = '2%';
+  $('ocrProgressText').textContent = 'Đang tải bộ nhận diện tiếng Hàn…';
+
+  let worker;
+  try{
+    worker = await Tesseract.createWorker('kor+vie+eng', 1, {
+      logger(message){
+        const progress = Math.max(0, Math.min(1, message.progress || 0));
+        if(message.status === 'recognizing text'){
+          $('ocrProgressBar').style.width = `${Math.round(progress * 100)}%`;
+          $('ocrProgressText').textContent =
+            `Đang nhận diện chữ… ${Math.round(progress * 100)}%`;
+        }else{
+          $('ocrProgressText').textContent =
+            message.status ? `OCR: ${message.status}` : 'Đang xử lý ảnh…';
+        }
+      }
+    });
+
+    const result = await worker.recognize(ocrSelectedFile, {
+      rotateAuto: true
+    });
+
+    const raw = result?.data?.text || '';
+    $('ocrRawText').value = raw;
+    ocrParsedRows = parseOcrText(raw);
+    renderOcrRows();
+    $('ocrProgressBar').style.width = '100%';
+    $('ocrProgressText').textContent =
+      `Hoàn tất: tìm thấy ${ocrParsedRows.length} dòng có chữ Hàn.`;
+    $('ocrResultSection').classList.remove('hidden');
+  }catch(error){
+    console.error(error);
+    alert(`OCR chưa thực hiện được: ${error.message || error}`);
+    $('ocrProgressText').textContent = 'OCR thất bại. Hãy thử ảnh rõ hơn hoặc kiểm tra mạng.';
+  }finally{
+    if(worker) await worker.terminate();
+    $('runOcr').disabled = false;
+  }
+}
+
+async function saveOcrCards(){
+  const targetId = $('ocrLesson').value;
+  const target = lessons.find(item => item.id === targetId);
+  if(!target){
+    alert('Không tìm thấy bài học.');
+    return;
+  }
+
+  const validRows = ocrParsedRows
+    .map(row => ({
+      ko: cleanOcrPart(row.ko),
+      meaning: cleanOcrPart(row.meaning)
+    }))
+    .filter(row => row.ko && containsHangul(row.ko));
+
+  if(!validRows.length){
+    alert('Chưa có từ tiếng Hàn hợp lệ để nhập.');
+    return;
+  }
+
+  const existing = new Set(target.cards.map(card => card.ko.trim().toLowerCase()));
+  let addedCount = 0;
+  let duplicateCount = 0;
+
+  validRows.forEach(row => {
+    const key = row.ko.toLowerCase();
+    if(existing.has(key)){
+      duplicateCount += 1;
+      return;
+    }
+    existing.add(key);
+    target.cards.push({
+      id: `card-${Date.now()}-${addedCount}`,
+      ko: row.ko,
+      pron: '',
+      meaning: row.meaning,
+      example_ko: '',
+      example_vi: '',
+      tip: '',
+      dialog_ko: '',
+      dialog_vi: '',
+      checked: false,
+      hard: false,
+      favorite: false,
+      order: target.cards.length + 1
+    });
+    addedCount += 1;
+  });
+
+  if(!addedCount){
+    alert(`Không thêm từ mới. Có ${duplicateCount} từ đã tồn tại.`);
+    return;
+  }
+
+  await putLesson(target);
+  currentLessonId = target.id;
+  filteredIds = target.cards.map(card => card.id);
+  position = Math.max(0, target.cards.length - addedCount);
+
+  $('ocrDialog').close();
+  renderHome();
+  renderReview();
+  renderStats();
+  render();
+
+  alert(
+    `Đã nhập ${addedCount} từ vào ${target.title}` +
+    (duplicateCount ? `; bỏ qua ${duplicateCount} từ trùng.` : '.')
+  );
+}
+
 function events(){
+
+$('openOcr').onclick=openOcrDialog;
+$('manageOcr').onclick=openOcrDialog;
+$('closeOcr').onclick=()=>$('ocrDialog').close();
+$('cancelOcr').onclick=()=>$('ocrDialog').close();
+$('takePhoto').onclick=()=>$('ocrCameraInput').click();
+$('choosePhoto').onclick=()=>$('ocrFileInput').click();
+$('ocrCameraInput').onchange=e=>selectOcrImage(e.target.files[0]);
+$('ocrFileInput').onchange=e=>selectOcrImage(e.target.files[0]);
+$('runOcr').onclick=runImageOcr;
+$('parseRawAgain').onclick=()=>{
+  ocrParsedRows=parseOcrText($('ocrRawText').value);
+  renderOcrRows();
+};
+$('addOcrRow').onclick=()=>{
+  ocrParsedRows.push({ko:'',meaning:''});
+  renderOcrRows();
+};
+$('saveOcrCards').onclick=saveOcrCards;
+
 
 document.querySelectorAll('.bottom-nav button').forEach(btn=>btn.onclick=()=>{const v=btn.dataset.view;if(v==='studyView'&&(!filteredIds.length)){currentLessonId=lessons[0]?.id;filteredIds=lesson()?.cards.map(c=>c.id)||[];position=0;render()}if(v==='reviewView')renderReview();if(v==='statsView')renderStats();if(v==='manageView'){listMode='all';renderList()}showView(v);document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.toggle('active',x===btn))});
 
