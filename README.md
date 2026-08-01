@@ -1,4 +1,3 @@
-# Dh한국 V8.5 Branding Edition
+# Dh한국 V9 Smart Learning
 
-Có logo, icon PWA, splash screen, bộ màu thương hiệu, Open Graph và Quiz 30 câu.
-Upload toàn bộ file trong gói UPDATE lên GitHub rồi commit.
+Level & EXP, Quiz Pro 10–100 câu, hẹn giờ, SRS SM-2, Smart Search và OCR ổn định.

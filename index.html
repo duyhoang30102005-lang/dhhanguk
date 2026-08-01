@@ -9,7 +9,7 @@
   <meta property="og:image" content="assets/og-image.png">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
   <meta name="theme-color" content="#5865f2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Dh한국">
@@ -27,8 +27,8 @@
 <div id="app">
   <header class="app-header">
     <div>
-      <h1><img class="brand-mark" src="icon-192.png" alt="">Dh한국</h1>
-      <p id="headerSub">V8.5 Branding Edition</p>
+      <h1><img class="brand-mark" src="icons/icon-192.png" alt="">Dh한국</h1>
+      <p id="headerSub">V9 Smart Learning</p>
     </div>
     <div class="header-actions">
       <button class="icon-button" id="darkMode">🌙</button>
@@ -40,7 +40,7 @@
   <main>
     <section class="view active" id="homeView">
       <div class="hero">
-        <p class="eyebrow">DH HANGUK · VERSION 8</p>
+        <p class="eyebrow">DH HANGUK · VERSION 9</p>
         <h2 id="greeting">안녕하세요! Học thông minh hơn mỗi ngày</h2>
         <p>OCR ảnh, SRS, Quiz, thống kê và quản lý bài học trong một ứng dụng.</p>
       </div>
@@ -54,7 +54,12 @@
         <span>🇰🇷</span>
       </section>
 
-      <div class="dashboard-grid">
+      <section class="level-card">
+<div class="level-badge" id="levelBadge">Lv.1</div>
+<div class="level-main"><div class="level-head"><b id="levelTitle">Level 1</b><small id="levelXpText">0 / 500 EXP</small></div><div class="progress"><span id="levelProgress" style="width:0%"></span></div></div>
+<div class="longest-streak"><span>🏆</span><small>Dài nhất</small><b id="longestStreak">1 ngày</b></div>
+</section>
+<div class="dashboard-grid">
         <article><span>📚</span><b id="totalCards">0</b><small>Tổng số từ</small></article>
         <article><span>✅</span><b id="learnedCards">0</b><small>Đã check</small></article>
         <article><span>🧠</span><b id="reviewCards">0</b><small>Cần ôn</small></article>
@@ -189,7 +194,7 @@
           <h2>📝 Quiz 30 câu</h2>
           <small id="quizBestScore">Điểm cao nhất: chưa có</small>
         </div>
-        <p id="quizProgress">Câu 1 / 30</p>
+        <div class="quiz-status"><p id="quizProgress">Câu 1 / 30</p><b id="quizTimer"></b></div>
       </div>
 
       <div class="quiz-mode-bar">
@@ -202,6 +207,8 @@
             <option value="hard">Từ khó</option>
           </select>
         </label>
+        <label>Số câu<select id="quizCount"><option value="10">10 câu</option><option value="20">20 câu</option><option value="30" selected>30 câu</option><option value="50">50 câu</option><option value="100">100 câu</option></select></label>
+        <label>Thời gian<select id="quizTimerMode"><option value="off">Không giới hạn</option><option value="60">60 giây</option><option value="120">120 giây</option></select></label>
         <button id="restartQuiz" type="button">Bắt đầu lại</button>
       </div>
 
@@ -369,6 +376,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="migration.js"></script>
+<script src="js/v9-features.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
