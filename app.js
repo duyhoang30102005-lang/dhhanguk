@@ -7,7 +7,20 @@ function store(mode='readonly'){return db.transaction(LESSONS,mode).objectStore(
 function getAllLessons(){return new Promise((res,rej)=>{const r=store().getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 function putLesson(l){return new Promise((res,rej)=>{const r=store('readwrite').put(l);r.onsuccess=res;r.onerror=()=>rej(r.error)})}
 function putAllLessons(list){return Promise.all(list.map(putLesson))}
-async function init(){db=await openDB();lessons=await getAllLessons();if(!lessons.length){lessons=await fetch('lessons.json').then(r=>r.json());await putAllLessons(lessons)}currentLessonId=lessons[0]?.id||null}
+async function init(){
+db=await openDB();
+lessons=await getAllLessons();
+if(!lessons.length){
+const response=await fetch('lessons.json',{cache:'no-store'});
+if(!response.ok)throw new Error(`Không tải được lessons.json (${response.status})`);
+const contentType=response.headers.get('content-type')||'';
+if(!contentType.includes('json'))throw new Error('lessons.json đang bị máy chủ trả về sai định dạng');
+lessons=await response.json();
+if(!Array.isArray(lessons)||!lessons.length)throw new Error('Dữ liệu bài học trống');
+await putAllLessons(lessons)
+}
+currentLessonId=lessons[0]?.id||null
+}
 function lesson(){return lessons.find(l=>l.id===currentLessonId)}function current(){const id=filteredIds[position];return lesson()?.cards.find(c=>c.id===id)}
 function renderHome(){
 const list=$('lessonList');list.innerHTML='';
@@ -69,4 +82,17 @@ $('backupBtn').onclick=()=>$('backupDialog').showModal();$('closeBackup').onclic
 const saved=localStorage.getItem('km-theme');if(saved==='dark')document.body.classList.add('dark');$('darkMode').textContent=document.body.classList.contains('dark')?'☀️':'🌙';$('darkMode').onclick=()=>{document.body.classList.toggle('dark');const d=document.body.classList.contains('dark');localStorage.setItem('km-theme',d?'dark':'light');$('darkMode').textContent=d?'☀️':'🌙'};
 let x=0;$('flashcard').ontouchstart=e=>x=e.changedTouches[0].screenX;$('flashcard').ontouchend=e=>{const d=e.changedTouches[0].screenX-x;if(Math.abs(d)>65){d<0?$('next').click():$('previous').click()}};
 }
-(async()=>{await init();events();renderHome();render();if('serviceWorker'in navigator)navigator.serviceWorker.register('service-worker.js').catch(()=>{})})()
+(async()=>{
+try{
+await init();
+events();
+renderHome();
+render();
+if('serviceWorker'in navigator){
+navigator.serviceWorker.register('service-worker.js').catch(console.error)
+}
+}catch(error){
+console.error(error);
+document.body.innerHTML=`<main style="max-width:680px;margin:40px auto;padding:20px;font-family:system-ui"><h1>Không tải được dữ liệu</h1><p>${error.message}</p><p>Hãy tải lại trang sau khi Vercel deploy bản sửa mới.</p></main>`
+}
+})()
