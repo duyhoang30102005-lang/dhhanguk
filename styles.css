@@ -109,3 +109,45 @@ dialog label{display:block;font-size:12px;font-weight:800;color:var(--accent);ma
   .ocr-row .ocr-ko,.ocr-row .ocr-pron,.ocr-row .ocr-meaning{grid-column:1}
   .ocr-row-remove{grid-column:2;grid-row:1/4}
 }
+
+/* V5 Final: quản lý bài học và OCR nhiều ảnh */
+.lesson-card-wrap{padding-right:0}
+.lesson-card-wrap .lesson-card{padding-right:128px}
+.lesson-controls{
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+  display:grid;
+  grid-template-columns:repeat(2,40px);
+  gap:6px;
+  z-index:3;
+}
+.lesson-controls button{
+  width:40px;
+  height:38px;
+  padding:0;
+  border-radius:11px;
+  display:grid;
+  place-items:center;
+  font-size:15px;
+}
+.lesson-controls .delete-lesson-button{
+  position:static;
+  transform:none;
+}
+.lesson-controls .delete-lesson-button:hover{transform:none}
+.lesson-controls button:disabled{opacity:.35}
+.ocr-file-summary{
+  margin:8px 0;
+  padding:9px 11px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  color:var(--muted);
+  font-size:13px;
+}
+@media(max-width:560px){
+  .lesson-card-wrap .lesson-card{padding-right:100px}
+  .lesson-controls{grid-template-columns:repeat(2,34px)}
+  .lesson-controls button{width:34px;height:34px;font-size:13px}
+}

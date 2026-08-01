@@ -16,7 +16,7 @@
   <header class="app-header">
     <div>
       <h1>🇰🇷 Korean Master Pro</h1>
-      <p id="headerSub">V5 · OCR thông minh + xóa bài học</p>
+      <p id="headerSub">V5 Final · OCR nhiều ảnh + quản lý đầy đủ</p>
     </div>
     <div class="header-actions">
       <button class="icon-button" id="darkMode">🌙</button>
@@ -27,7 +27,7 @@
   <main>
     <section class="view active" id="homeView">
       <div class="hero">
-        <p class="eyebrow">KOREAN MASTER PRO V4</p>
+        <p class="eyebrow">KOREAN MASTER PRO V5 FINAL</p>
         <h2 id="greeting">Bắt đầu học hôm nay</h2>
         <p>Flashcard, quản lý bài học, ôn từ chưa thuộc và theo dõi tiến độ.</p>
       </div>
@@ -169,7 +169,7 @@
 
 <dialog id="lessonDialog">
   <form method="dialog">
-    <div class="dialog-header"><h2>＋ Thêm bài học</h2><button class="close-button" value="cancel">×</button></div>
+    <div class="dialog-header"><h2 id="lessonDialogTitle">＋ Thêm bài học</h2><button class="close-button" value="cancel">×</button></div>
     <label>Tên bài<input id="lessonTitle" placeholder="Ví dụ: Bài 2"></label>
     <label>Giáo trình<input id="lessonBook" value="Giáo trình 1A"></label>
     <div class="dialog-actions"><button value="cancel" class="secondary">Hủy</button><button type="button" id="saveLesson" class="primary">Lưu bài</button></div>
@@ -218,12 +218,13 @@
     </label>
     <div class="ocr-pick-grid">
       <button id="takePhoto" type="button">📷 Chụp ảnh</button>
-      <button id="choosePhoto" type="button">🖼️ Chọn ảnh</button>
+      <button id="choosePhoto" type="button">🖼️ Chọn một hoặc nhiều ảnh</button>
     </div>
 
     <input id="ocrCameraInput" type="file" accept="image/*" capture="environment" hidden>
-    <input id="ocrFileInput" type="file" accept="image/*" hidden>
+    <input id="ocrFileInput" type="file" accept="image/*" multiple hidden>
 
+    <p id="ocrFileSummary" class="ocr-file-summary hidden"></p>
     <div id="ocrPreviewWrap" class="ocr-image-wrap hidden">
       <img id="ocrImagePreview" alt="Ảnh cần nhận diện"><canvas id="ocrProcessedPreview" class="hidden"></canvas>
     </div>

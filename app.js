@@ -30,6 +30,52 @@ currentLessonId=lessons[0]?.id||null
 }
 function lesson(){return lessons.find(l=>l.id===currentLessonId)}function current(){const id=filteredIds[position];return lesson()?.cards.find(c=>c.id===id)}
 
+
+function openLessonDialog(id=null){
+  editingLessonId=id;
+  const target=id?lessons.find(item=>item.id===id):null;
+  $('lessonDialogTitle').textContent=target?'✏️ Sửa bài học':'＋ Thêm bài học';
+  $('lessonTitle').value=target?.title||'';
+  $('lessonBook').value=target?.book||'Giáo trình 1A';
+  $('lessonDialog').showModal();
+}
+
+async function saveLessonDialog(){
+  const title=$('lessonTitle').value.trim();
+  if(!title)return alert('Hãy nhập tên bài');
+
+  if(editingLessonId){
+    const target=lessons.find(item=>item.id===editingLessonId);
+    if(!target)return;
+    target.title=title;
+    target.book=$('lessonBook').value.trim()||'Giáo trình 1A';
+    await putLesson(target);
+  }else{
+    const lessonItem={
+      id:`lesson-${Date.now()}`,
+      title,
+      book:$('lessonBook').value.trim()||'Giáo trình 1A',
+      cards:[]
+    };
+    lessons.push(lessonItem);
+    await putLesson(lessonItem);
+  }
+
+  editingLessonId=null;
+  $('lessonDialog').close();
+  renderHome();
+  renderList();
+}
+
+async function moveLesson(id,direction){
+  const index=lessons.findIndex(item=>item.id===id);
+  const targetIndex=index+direction;
+  if(index<0||targetIndex<0||targetIndex>=lessons.length)return;
+  [lessons[index],lessons[targetIndex]]=[lessons[targetIndex],lessons[index]];
+  await putAllLessons(lessons);
+  renderHome();
+}
+
 async function deleteLesson(id){
   const target=lessons.find(item=>item.id===id);
   if(!target)return;
@@ -66,7 +112,7 @@ async function deleteLesson(id){
 
 function renderHome(){
 const list=$('lessonList');list.innerHTML='';
-lessons.forEach(l=>{
+lessons.forEach((l,index)=>{
 const checked=l.cards.filter(c=>c.checked).length;
 const wrap=document.createElement('div');
 wrap.className='lesson-card-wrap';
@@ -76,18 +122,33 @@ b.className='lesson-card';
 b.innerHTML=`<div class="lesson-card-top"><div><strong>📘 ${l.title}</strong><small>${l.book}</small></div><span>${l.cards.length} từ</span></div><div class="progress"><span style="width:${checked/Math.max(l.cards.length,1)*100}%"></span></div>`;
 b.onclick=()=>openLesson(l.id);
 
+const controls=document.createElement('div');
+controls.className='lesson-controls';
+
+const up=document.createElement('button');
+up.type='button';up.textContent='↑';up.title='Đưa bài lên';
+up.disabled=index===0;
+up.onclick=e=>{e.stopPropagation();moveLesson(l.id,-1)};
+
+const down=document.createElement('button');
+down.type='button';down.textContent='↓';down.title='Đưa bài xuống';
+down.disabled=index===lessons.length-1;
+down.onclick=e=>{e.stopPropagation();moveLesson(l.id,1)};
+
+const edit=document.createElement('button');
+edit.type='button';edit.textContent='✏️';edit.title='Sửa bài học';
+edit.onclick=e=>{e.stopPropagation();openLessonDialog(l.id)};
+
 const remove=document.createElement('button');
 remove.type='button';
 remove.className='delete-lesson-button';
 remove.title='Xóa bài học';
 remove.setAttribute('aria-label',`Xóa bài học ${l.title}`);
 remove.textContent='🗑️';
-remove.onclick=e=>{
-  e.stopPropagation();
-  deleteLesson(l.id);
-};
+remove.onclick=e=>{e.stopPropagation();deleteLesson(l.id)};
 
-wrap.append(b,remove);
+controls.append(up,down,edit,remove);
+wrap.append(b,controls);
 list.append(wrap)
 });
 const a=allCards(),learned=a.filter(c=>c.checked).length,review=a.filter(c=>!c.checked).length;
@@ -206,7 +267,9 @@ function renderStats(){
 
 
 let ocrSelectedFile = null;
+let ocrSelectedFiles = [];
 let ocrParsedRows = [];
+let editingLessonId = null;
 
 function fillOcrLessons(){
   const select = $('ocrLesson');
@@ -220,6 +283,7 @@ function fillOcrLessons(){
 function openOcrDialog(){
   fillOcrLessons();
   ocrSelectedFile = null;
+  ocrSelectedFiles = [];
   ocrParsedRows = [];
   $('ocrImagePreview').removeAttribute('src');$('ocrImagePreview').classList.remove('hidden');$('ocrProcessedPreview').classList.add('hidden');
   $('ocrPreviewWrap').classList.add('hidden');
@@ -230,22 +294,38 @@ function openOcrDialog(){
   $('ocrRawText').value = '';
   $('ocrProgressBar').style.width = '0%';
   $('ocrProgressText').textContent = 'Đang chuẩn bị OCR…';
+  $('ocrFileSummary').textContent='';
+  $('ocrFileSummary').classList.add('hidden');
   $('ocrDialog').showModal();
 }
 
 function selectOcrImage(file){
-  if(!file) return;
-  if(!file.type.startsWith('image/')){
-    alert('Hãy chọn một file ảnh.');
+  if(!file)return;
+  selectOcrImages([file]);
+}
+
+function selectOcrImages(files){
+  const valid=Array.from(files||[]).filter(file=>file.type.startsWith('image/'));
+  if(!valid.length){
+    alert('Hãy chọn file ảnh.');
     return;
   }
-  ocrSelectedFile = file;
-  const url = URL.createObjectURL(file);
-  $('ocrImagePreview').src = url;
-  $('ocrImagePreview').onload = () => URL.revokeObjectURL(url);
-  $('ocrPreviewWrap').classList.remove('hidden');$('ocrImagePreview').classList.remove('hidden');$('ocrProcessedPreview').classList.add('hidden');
+
+  ocrSelectedFiles=valid;
+  ocrSelectedFile=valid[0];
+
+  const url=URL.createObjectURL(valid[0]);
+  $('ocrImagePreview').src=url;
+  $('ocrImagePreview').onload=()=>URL.revokeObjectURL(url);
+
+  $('ocrFileSummary').textContent=
+    valid.length===1?`Đã chọn: ${valid[0].name}`:`Đã chọn ${valid.length} ảnh`;
+  $('ocrFileSummary').classList.remove('hidden');
+  $('ocrPreviewWrap').classList.remove('hidden');
+  $('ocrImagePreview').classList.remove('hidden');
+  $('ocrProcessedPreview').classList.add('hidden');
   $('ocrResultSection').classList.add('hidden');
-  $('runOcr').disabled = false;
+  $('runOcr').disabled=false;
 }
 
 function containsHangul(text){
@@ -380,34 +460,19 @@ function renderOcrRows(){
   });
 }
 
-async function runImageOcr(){
-  if(!ocrSelectedFile)return;
-  if(!window.Tesseract){
-    alert('Không tải được bộ OCR. Hãy kiểm tra mạng rồi thử lại.');
-    return;
-  }
-
-  $('runOcr').disabled=true;
-  $('ocrProgressWrap').classList.remove('hidden');
-  $('ocrResultSection').classList.add('hidden');
-  $('ocrProgressBar').style.width='2%';
-  $('ocrProgressText').textContent='Đang làm rõ ảnh…';
-
+async function recognizeOneImage(file,mode,imageNumber,totalImages){
+  const processed=await preprocessOcrImage(file,mode);
   let worker;
-  try{
-    const mode=$('ocrMode')?.value||'document';
-    const processed=await preprocessOcrImage(ocrSelectedFile,mode);
 
+  try{
     worker=await Tesseract.createWorker('kor+vie+eng',1,{
       logger(message){
         const progress=Math.max(0,Math.min(1,message.progress||0));
         if(message.status==='recognizing text'){
-          $('ocrProgressBar').style.width=`${Math.round(progress*100)}%`;
+          const overall=((imageNumber-1)+progress)/totalImages;
+          $('ocrProgressBar').style.width=`${Math.round(overall*100)}%`;
           $('ocrProgressText').textContent=
-            `Đang nhận diện chữ… ${Math.round(progress*100)}%`;
-        }else{
-          $('ocrProgressText').textContent=
-            message.status?`OCR: ${message.status}`:'Đang xử lý ảnh…';
+            `Đang đọc ảnh ${imageNumber}/${totalImages}… ${Math.round(progress*100)}%`;
         }
       }
     });
@@ -422,30 +487,56 @@ async function runImageOcr(){
     let raw=first?.data?.text||'';
 
     if(mode==='document' && (raw.match(/[\uAC00-\uD7A3]/g)||[]).length<3){
-      $('ocrProgressText').textContent='Đang kiểm tra lại bằng ảnh gốc…';
-      const second=await worker.recognize(ocrSelectedFile,{rotateAuto:true});
+      const second=await worker.recognize(file,{rotateAuto:true});
       const rawSecond=second?.data?.text||'';
       if((rawSecond.match(/[\uAC00-\uD7A3]/g)||[]).length >
          (raw.match(/[\uAC00-\uD7A3]/g)||[]).length){
         raw=rawSecond;
       }
     }
+    return raw;
+  }finally{
+    if(worker)await worker.terminate();
+  }
+}
 
+async function runImageOcr(){
+  const files=ocrSelectedFiles.length?ocrSelectedFiles:(ocrSelectedFile?[ocrSelectedFile]:[]);
+  if(!files.length)return;
+  if(!window.Tesseract){
+    alert('Không tải được bộ OCR. Hãy kiểm tra mạng rồi thử lại.');
+    return;
+  }
+
+  $('runOcr').disabled=true;
+  $('ocrProgressWrap').classList.remove('hidden');
+  $('ocrResultSection').classList.add('hidden');
+  $('ocrProgressBar').style.width='1%';
+
+  try{
+    const mode=$('ocrMode')?.value||'document';
+    const rawParts=[];
+
+    for(let i=0;i<files.length;i++){
+      $('ocrProgressText').textContent=`Đang chuẩn bị ảnh ${i+1}/${files.length}…`;
+      const raw=await recognizeOneImage(files[i],mode,i+1,files.length);
+      rawParts.push(`--- Ảnh ${i+1}: ${files[i].name} ---\n${raw}`);
+    }
+
+    const raw=rawParts.join('\n\n');
     $('ocrRawText').value=raw;
     ocrParsedRows=enrichOcrRows(parseOcrText(raw));
     renderOcrRows();
 
     $('ocrProgressBar').style.width='100%';
     $('ocrProgressText').textContent=
-      `Hoàn tất: tìm thấy ${ocrParsedRows.length} dòng có chữ Hàn.`;
+      `Hoàn tất ${files.length} ảnh: tìm thấy ${ocrParsedRows.length} dòng có chữ Hàn.`;
     $('ocrResultSection').classList.remove('hidden');
   }catch(error){
     console.error(error);
     alert(`OCR chưa thực hiện được: ${error.message||error}`);
-    $('ocrProgressText').textContent=
-      'OCR thất bại. Hãy thử ảnh rõ hơn hoặc cắt sát phần từ vựng.';
+    $('ocrProgressText').textContent='OCR thất bại. Hãy thử ảnh rõ hơn.';
   }finally{
-    if(worker)await worker.terminate();
     $('runOcr').disabled=false;
   }
 }
@@ -531,7 +622,7 @@ $('cancelOcr').onclick=()=>$('ocrDialog').close();
 $('takePhoto').onclick=()=>$('ocrCameraInput').click();
 $('choosePhoto').onclick=()=>$('ocrFileInput').click();
 $('ocrCameraInput').onchange=e=>selectOcrImage(e.target.files[0]);
-$('ocrFileInput').onchange=e=>selectOcrImage(e.target.files[0]);
+$('ocrFileInput').onchange=e=>selectOcrImages(e.target.files);
 $('runOcr').onclick=runImageOcr;
 $('parseRawAgain').onclick=()=>{
   ocrParsedRows=enrichOcrRows(parseOcrText($('ocrRawText').value));
@@ -548,7 +639,7 @@ document.querySelectorAll('.bottom-nav button').forEach(btn=>btn.onclick=()=>{co
 
 $('backHome').onclick=()=>showView('homeView');$('manageBack').onclick=()=>showView('homeView');$('openAllCards').onclick=()=>{currentLessonId=lessons[0].id;openLesson(currentLessonId)};
 $('openManage').onclick=()=>{listMode='all';renderList();showView('manageView')};$('openHard').onclick=()=>{listMode='hard';renderList();showView('manageView')};$('openFavorites').onclick=()=>{listMode='favorites';renderList();showView('manageView')};$('openReview').onclick=()=>{listMode='unchecked';renderList();showView('manageView')};
-$('addLesson').onclick=()=>$('lessonDialog').showModal();$('saveLesson').onclick=async()=>{const title=$('lessonTitle').value.trim();if(!title)return alert('Hãy nhập tên bài');const l={id:`lesson-${Date.now()}`,title,book:$('lessonBook').value.trim()||'Giáo trình 1A',cards:[]};lessons.push(l);await putLesson(l);$('lessonDialog').close();renderHome()};
+$('addLesson').onclick=()=>openLessonDialog();$('saveLesson').onclick=saveLessonDialog;
 $('manageAdd').onclick=()=>editor(true);$('addCard').onclick=()=>editor(true);$('editCard').onclick=()=>editor(false);$('saveCard').onclick=saveEditor;
 $('flashcard').onclick=e=>{if(!e.target.closest('button'))$('flashcard').classList.toggle('flipped')};$('previous').onclick=()=>{position=(position-1+filteredIds.length)%filteredIds.length;render()};$('next').onclick=()=>{position=(position+1)%filteredIds.length;render()};
 $('speakFront').onclick=e=>{e.stopPropagation();speak(current().ko)};$('speakBack').onclick=e=>{e.stopPropagation();speak(current().ko)};$('favorite').onclick=()=>update({favorite:!current().favorite});$('hard').onclick=()=>update({hard:!current().hard});$('checked').onclick=()=>update({checked:!current().checked});
