@@ -1,5 +1,5 @@
 
-const CACHE = 'korean-master-pro-v7';
+const CACHE = 'dh-hanguk-v8-premium';
 const ASSETS = [
   './',
   'index.html',

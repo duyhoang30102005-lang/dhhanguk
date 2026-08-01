@@ -1,7 +1,16 @@
 
 const DB='korean-master-v2-db',LESSONS='lessons';let db,lessons=[],currentLessonId=null,filteredIds=[],position=0,adding=false,listMode='all';
 const $=id=>document.getElementById(id);const allCards=()=>lessons.flatMap(l=>l.cards.map(c=>({...c,lessonId:l.id,lessonTitle:l.title})));
-function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'})}
+function showView(id){
+document.querySelectorAll('.view').forEach(view=>view.classList.remove('active'));
+const target=$(id);
+if(target){
+  target.classList.add('active');
+  target.classList.remove('view-enter');
+  requestAnimationFrame(()=>target.classList.add('view-enter'));
+}
+window.scrollTo({top:0,behavior:'smooth'})
+}
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(LESSONS))r.result.createObjectStore(LESSONS,{keyPath:'id'})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 function store(mode='readonly'){return db.transaction(LESSONS,mode).objectStore(LESSONS)}
 function getAllLessons(){return new Promise((res,rej)=>{const r=store().getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
@@ -113,6 +122,52 @@ async function deleteLesson(id){
 }
 
 
+
+
+let deferredInstallPrompt=null;
+
+function updateGreeting(){
+  const hour=new Date().getHours();
+  const text=
+    hour<11 ? '좋은 아침! Chào buổi sáng' :
+    hour<18 ? '안녕하세요! Chào buổi chiều' :
+    '좋은 저녁! Chào buổi tối';
+
+  if($('greeting'))$('greeting').textContent=text;
+}
+
+function hideSplash(){
+  const splash=$('splashScreen');
+  if(!splash)return;
+  setTimeout(()=>{
+    splash.classList.add('hide');
+    setTimeout(()=>splash.remove(),500);
+  },650);
+}
+
+function setupInstallPrompt(){
+  window.addEventListener('beforeinstallprompt',event=>{
+    event.preventDefault();
+    deferredInstallPrompt=event;
+    $('installApp')?.classList.remove('hidden');
+  });
+
+  $('installApp')?.addEventListener('click',async()=>{
+    if(!deferredInstallPrompt){
+      alert('Trên iPhone: mở bằng Safari → Chia sẻ → Thêm vào Màn hình chính.');
+      return;
+    }
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt=null;
+    $('installApp').classList.add('hidden');
+  });
+
+  window.addEventListener('appinstalled',()=>{
+    deferredInstallPrompt=null;
+    $('installApp')?.classList.add('hidden');
+  });
+}
 
 function dateKey(date=new Date()){
   return date.toISOString().slice(0,10);
@@ -1125,6 +1180,8 @@ const saved=localStorage.getItem('km-theme');if(saved==='dark')document.body.cla
 let x=0;$('flashcard').ontouchstart=e=>x=e.changedTouches[0].screenX;$('flashcard').ontouchend=e=>{const d=e.changedTouches[0].screenX-x;if(Math.abs(d)>65){d<0?$('next').click():$('previous').click()}};
 }
 (async()=>{
+updateGreeting();
+setupInstallPrompt();
 try{
 await init();
 events();
@@ -1133,11 +1190,13 @@ renderDailyGoal();
 updateAutoBackupInfo();
 createAutoBackup();
 render();
+hideSplash();
 if('serviceWorker'in navigator){
 navigator.serviceWorker.register('service-worker.js').catch(console.error)
 }
 }catch(error){
 console.error(error);
+hideSplash();
 document.body.innerHTML=`<main style="max-width:680px;margin:40px auto;padding:20px;font-family:system-ui"><h1>Không tải được dữ liệu</h1><p>${error.message}</p><p>Hãy tải lại trang sau khi Vercel deploy bản sửa mới.</p></main>`
 }
 })()
