@@ -163,3 +163,86 @@ dialog label{display:block;font-size:12px;font-weight:800;color:var(--accent);ma
 .achievement-list{display:grid;gap:10px}.achievement-card{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
 .achievement-card>span{font-size:30px}.achievement-card b{display:block}.achievement-card small{display:block;color:var(--muted);margin-top:3px}
 .achievement-card em{font-style:normal;font-size:12px;font-weight:800}.achievement-card.locked{opacity:.48;filter:grayscale(.8)}.achievement-card.unlocked{border-color:var(--accent)}
+
+
+/* V7 daily goal */
+.daily-goal-card{
+  margin:16px 0;
+  padding:14px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+}
+.daily-goal-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:10px;
+}
+.daily-goal-head b{display:block}
+.daily-goal-head small{display:block;color:var(--muted);margin-top:3px}
+.daily-goal-head button{padding:8px 11px;font-size:12px}
+.random-practice-button{
+  grid-column:1/-1;
+  background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  color:#fff;
+  border:0;
+}
+
+/* V7 activity chart */
+.activity-section{
+  margin-top:18px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:15px;
+}
+.activity-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.activity-head h3{margin:0}
+.activity-head small{color:var(--muted)}
+.activity-chart{
+  height:190px;
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:8px;
+  align-items:end;
+  margin-top:18px;
+}
+.activity-day{
+  height:100%;
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+  align-items:end;
+  gap:6px;
+  text-align:center;
+}
+.activity-value{font-size:12px;font-weight:800}
+.activity-bar-wrap{
+  height:130px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  background:var(--bg);
+  border-radius:10px;
+  overflow:hidden;
+}
+.activity-bar-wrap span{
+  display:block;
+  width:70%;
+  min-height:3px;
+  background:linear-gradient(180deg,var(--primary),var(--accent));
+  border-radius:8px 8px 0 0;
+}
+.activity-day small{font-size:11px;color:var(--muted)}
+.backup-status{
+  display:block;
+  color:var(--muted);
+  margin-top:8px;
+  line-height:1.4;
+}

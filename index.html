@@ -9,14 +9,14 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="stylesheet" href="styles.css">
-  <title>Korean Master Pro V6</title>
+  <title>Korean Master Pro V7</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>🇰🇷 Korean Master Pro</h1>
-      <p id="headerSub">V6 · SRS + Quiz + Thành tích</p>
+      <p id="headerSub">V7 · Mục tiêu ngày + Luyện ngẫu nhiên + Sao lưu tự động</p>
     </div>
     <div class="header-actions">
       <button class="icon-button" id="darkMode">🌙</button>
@@ -27,7 +27,7 @@
   <main>
     <section class="view active" id="homeView">
       <div class="hero">
-        <p class="eyebrow">KOREAN MASTER PRO V5 FINAL</p>
+        <p class="eyebrow">KOREAN MASTER PRO V7</p>
         <h2 id="greeting">Bắt đầu học hôm nay</h2>
         <p>Flashcard, quản lý bài học, ôn từ chưa thuộc và theo dõi tiến độ.</p>
       </div>
@@ -39,10 +39,22 @@
         <article><span>🔥</span><b id="streakDays">1</b><small>Chuỗi ngày</small></article>
       </div>
 
+      <section class="daily-goal-card">
+        <div class="daily-goal-head">
+          <div>
+            <b>🎯 Mục tiêu hôm nay</b>
+            <small id="dailyGoalText">0 / 20 lượt học</small>
+          </div>
+          <button id="editDailyGoal" type="button">Sửa mục tiêu</button>
+        </div>
+        <div class="progress"><span id="dailyGoalBar" style="width:0%"></span></div>
+      </section>
+
       <div class="home-actions">
         <button id="addLesson" class="primary">＋ Thêm bài học</button>
         <button id="openAllCards">📚 Học tất cả</button>
         <button id="openOcr" class="ocr-home-button">📷 Quét ảnh từ vựng</button>
+        <button id="openRandomPractice" class="random-practice-button">🎲 Luyện ngẫu nhiên</button>
       </div>
 
       <h2 class="section-title">Bài học</h2>
@@ -132,6 +144,13 @@
     <section class="view" id="statsView">
       <h2>📊 Thống kê</h2>
       <div id="statsCards" class="stats-list"></div>
+      <section class="activity-section">
+        <div class="activity-head">
+          <h3>Hoạt động 7 ngày gần nhất</h3>
+          <small id="activitySummary"></small>
+        </div>
+        <div id="activityChart" class="activity-chart"></div>
+      </section>
     </section>
 
 
@@ -210,6 +229,8 @@
   <div class="backup-actions">
     <button id="exportData">⬇️ Xuất dữ liệu</button>
     <button id="importData">⬆️ Nhập dữ liệu</button>
+    <button id="restoreAutoBackup">🕘 Khôi phục bản tự động gần nhất</button>
+    <small id="autoBackupInfo" class="backup-status"></small>
     <input id="importFile" type="file" accept=".kmdata,.json,application/json" hidden>
   </div>
 </dialog>

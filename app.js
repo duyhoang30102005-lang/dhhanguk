@@ -62,6 +62,7 @@ async function saveLessonDialog(){
   }
 
   editingLessonId=null;
+  createAutoBackup();
   $('lessonDialog').close();
   renderHome();
   renderList();
@@ -106,10 +107,181 @@ async function deleteLesson(id){
   renderStats();
   renderList();
 
+  createAutoBackup();
   showView('homeView');
   alert(`Đã xóa bài học “${target.title}”.`);
 }
 
+
+
+function dateKey(date=new Date()){
+  return date.toISOString().slice(0,10);
+}
+
+function getActivityLog(){
+  try{return JSON.parse(localStorage.getItem('km-activity-log')||'{}')}
+  catch{return {}}
+}
+
+function recordActivity(type='study',amount=1){
+  const log=getActivityLog();
+  const key=dateKey();
+  const day=log[key]||{study:0,quiz:0,ocr:0};
+  day[type]=(day[type]||0)+amount;
+  log[key]=day;
+
+  const keys=Object.keys(log).sort();
+  while(keys.length>60){
+    delete log[keys.shift()];
+  }
+
+  localStorage.setItem('km-activity-log',JSON.stringify(log));
+  renderDailyGoal();
+}
+
+function getDailyGoal(){
+  const value=Number(localStorage.getItem('km-daily-goal')||20);
+  return Number.isFinite(value)&&value>0?value:20;
+}
+
+function todayStudyCount(){
+  const day=getActivityLog()[dateKey()]||{};
+  return (day.study||0)+(day.quiz||0);
+}
+
+function renderDailyGoal(){
+  const goal=getDailyGoal();
+  const current=todayStudyCount();
+  const percent=Math.min(100,Math.round(current/goal*100));
+
+  if($('dailyGoalText'))$('dailyGoalText').textContent=`${current} / ${goal} lượt học`;
+  if($('dailyGoalBar'))$('dailyGoalBar').style.width=`${percent}%`;
+}
+
+function editDailyGoal(){
+  const current=getDailyGoal();
+  const raw=prompt('Mục tiêu số lượt học mỗi ngày:',String(current));
+  if(raw===null)return;
+  const value=Number(raw);
+  if(!Number.isFinite(value)||value<1||value>500){
+    alert('Hãy nhập số từ 1 đến 500.');
+    return;
+  }
+  localStorage.setItem('km-daily-goal',String(Math.round(value)));
+  renderDailyGoal();
+}
+
+function renderActivityChart(){
+  const box=$('activityChart');
+  if(!box)return;
+
+  const log=getActivityLog();
+  const days=[];
+
+  for(let offset=6;offset>=0;offset--){
+    const date=new Date();
+    date.setDate(date.getDate()-offset);
+    const key=dateKey(date);
+    const data=log[key]||{};
+    days.push({
+      key,
+      label:date.toLocaleDateString('vi-VN',{weekday:'short'}),
+      value:(data.study||0)+(data.quiz||0)+(data.ocr||0)
+    });
+  }
+
+  const max=Math.max(1,...days.map(day=>day.value));
+  box.innerHTML='';
+
+  days.forEach(day=>{
+    const item=document.createElement('div');
+    item.className='activity-day';
+    item.innerHTML=
+      `<div class="activity-value">${day.value}</div>`+
+      `<div class="activity-bar-wrap"><span style="height:${Math.round(day.value/max*100)}%"></span></div>`+
+      `<small>${day.label}</small>`;
+    box.append(item);
+  });
+
+  const total=days.reduce((sum,day)=>sum+day.value,0);
+  $('activitySummary').textContent=`${total} lượt trong 7 ngày`;
+}
+
+function createAutoBackup(){
+  try{
+    const payload=createBackup(lessons);
+    const data=JSON.stringify(payload);
+    if(data.length>4_000_000)return;
+
+    localStorage.setItem('km-auto-backup',data);
+    localStorage.setItem('km-auto-backup-time',new Date().toISOString());
+    updateAutoBackupInfo();
+  }catch(error){
+    console.warn('Auto backup failed',error);
+  }
+}
+
+function updateAutoBackupInfo(){
+  const info=$('autoBackupInfo');
+  if(!info)return;
+
+  const time=localStorage.getItem('km-auto-backup-time');
+  info.textContent=time
+    ? `Bản tự động gần nhất: ${new Date(time).toLocaleString('vi-VN')}`
+    : 'Chưa có bản sao lưu tự động.';
+}
+
+async function restoreAutoBackup(){
+  const raw=localStorage.getItem('km-auto-backup');
+  if(!raw){
+    alert('Chưa có bản sao lưu tự động.');
+    return;
+  }
+
+  if(!confirm('Khôi phục bản sao lưu tự động gần nhất? Dữ liệu hiện tại sẽ được thay thế.'))return;
+
+  try{
+    const backup=migrateBackup(JSON.parse(raw));
+    lessons=backup.lessons;
+    await putAllLessons(lessons);
+    currentLessonId=lessons[0]?.id||null;
+
+    if(backup.settings?.theme){
+      localStorage.setItem('km-theme',backup.settings.theme);
+      document.body.classList.toggle('dark',backup.settings.theme==='dark');
+    }
+
+    renderHome();
+    renderReview();
+    renderStats();
+    alert('Đã khôi phục bản tự động.');
+  }catch(error){
+    alert(error.message||'Không thể khôi phục bản tự động.');
+  }
+}
+
+function startRandomPractice(){
+  const cards=allCards();
+  if(!cards.length){
+    alert('Chưa có từ để luyện.');
+    return;
+  }
+
+  const shuffled=[...cards].sort(()=>Math.random()-0.5);
+  const selected=shuffled.slice(0,Math.min(20,shuffled.length));
+  const first=selected[0];
+
+  currentLessonId=first.lessonId;
+  filteredIds=selected
+    .filter(card=>card.lessonId===currentLessonId)
+    .map(card=>card.id);
+
+  if(!filteredIds.length)filteredIds=[first.id];
+
+  position=0;
+  showView('studyView');
+  render();
+}
 
 function ensureSrs(card){
   if(!card.srs){
@@ -141,12 +313,12 @@ async function gradeCurrentCard(grade){
     srs.interval=srs.repetitions===0?4:Math.max(4,Math.round((srs.interval||1)*srs.ease*1.3));srs.repetitions+=1;srs.ease=Math.min(3.2,srs.ease+0.15);
   }
   srs.lastGrade=grade;srs.due=addDays(now,srs.interval).toISOString();card.checked=true;
-  await saveLessonState();renderHome();renderReview();renderStats();
+  await saveLessonState();recordActivity('study',1);createAutoBackup();renderHome();renderReview();renderStats();
   if(filteredIds.length>1)position=(position+1)%filteredIds.length;
   render();
 }
 
-function renderHome(){
+function renderHome(){renderDailyGoal();
 const list=$('lessonList');list.innerHTML='';
 lessons.forEach((l,index)=>{
 const checked=l.cards.filter(c=>c.checked).length;
@@ -224,7 +396,7 @@ if(backup.settings?.theme){
 localStorage.setItem('km-theme',backup.settings.theme);
 document.body.classList.toggle('dark',backup.settings.theme==='dark')
 }
-renderHome();renderReview();renderStats();
+createAutoBackup();renderHome();renderReview();renderStats();
 alert('Đã khôi phục dữ liệu thành công')
 }catch(e){alert(e.message||'File không hợp lệ')}
 }
@@ -249,7 +421,7 @@ function renderReview(){
     row.append('🧠',main,open);list.append(row);
   });
 }
-function renderStats(){
+function renderStats(){renderActivityChart();
   const box = $('statsCards');
   if (!box) return;
 
@@ -841,6 +1013,8 @@ async function saveOcrCards(){
   position = Math.max(0, target.cards.length - addedCount);
 
   $('ocrDialog').close();
+  recordActivity('ocr',addedCount);
+  createAutoBackup();
   renderHome();
   renderReview();
   renderStats();
@@ -877,7 +1051,7 @@ function renderQuizQuestion(){
   q.options.forEach(option=>{
     const b=document.createElement('button');b.textContent=option;
     b.onclick=()=>{
-      if(quizState.answered)return;quizState.answered=true;
+      if(quizState.answered)return;quizState.answered=true;recordActivity('quiz',1);
       if(option===q.card.meaning){quizState.score+=1;b.classList.add('correct');$('quizFeedback').textContent='Đúng rồi ✅'}
       else{b.classList.add('wrong');$('quizFeedback').textContent=`Đáp án đúng: ${q.card.meaning}`;[...box.children].forEach(x=>{if(x.textContent===q.card.meaning)x.classList.add('correct')})}
       $('quizNext').disabled=false;
@@ -906,6 +1080,9 @@ function renderAchievements(){
 }
 
 function events(){
+$('editDailyGoal').onclick=editDailyGoal;
+$('openRandomPractice').onclick=startRandomPractice;
+$('restoreAutoBackup').onclick=restoreAutoBackup;
 $('srsAgain').onclick=()=>gradeCurrentCard('again');
 $('srsHard').onclick=()=>gradeCurrentCard('hard');
 $('srsGood').onclick=()=>gradeCurrentCard('good');
@@ -943,7 +1120,7 @@ $('flashcard').onclick=e=>{if(!e.target.closest('button'))$('flashcard').classLi
 $('speakFront').onclick=e=>{e.stopPropagation();speak(current().ko)};$('speakBack').onclick=e=>{e.stopPropagation();speak(current().ko)};$('favorite').onclick=()=>update({favorite:!current().favorite});$('hard').onclick=()=>update({hard:!current().hard});$('checked').onclick=()=>update({checked:!current().checked});
 $('search').oninput=e=>applySearch(e.target.value);$('showAll').onclick=()=>{filteredIds=lesson().cards.map(c=>c.id);position=0;render()};$('listSearch').oninput=renderList;$('toggleAll').onclick=async()=>{const all=allCards().every(c=>c.checked);lessons.forEach(l=>l.cards.forEach(c=>c.checked=!all));await putAllLessons(lessons);renderList();renderHome()};
 document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{listMode=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));renderList()});
-$('backupBtn').onclick=()=>$('backupDialog').showModal();$('closeBackup').onclick=()=>$('backupDialog').close();$('exportData').onclick=exportData;$('importData').onclick=()=>$('importFile').click();$('importFile').onchange=e=>{if(e.target.files[0])importData(e.target.files[0])};
+$('backupBtn').onclick=()=>{updateAutoBackupInfo();$('backupDialog').showModal()};$('closeBackup').onclick=()=>$('backupDialog').close();$('exportData').onclick=exportData;$('importData').onclick=()=>$('importFile').click();$('importFile').onchange=e=>{if(e.target.files[0])importData(e.target.files[0])};
 const saved=localStorage.getItem('km-theme');if(saved==='dark')document.body.classList.add('dark');$('darkMode').textContent=document.body.classList.contains('dark')?'☀️':'🌙';$('darkMode').onclick=()=>{document.body.classList.toggle('dark');const d=document.body.classList.contains('dark');localStorage.setItem('km-theme',d?'dark':'light');$('darkMode').textContent=d?'☀️':'🌙'};
 let x=0;$('flashcard').ontouchstart=e=>x=e.changedTouches[0].screenX;$('flashcard').ontouchend=e=>{const d=e.changedTouches[0].screenX-x;if(Math.abs(d)>65){d<0?$('next').click():$('previous').click()}};
 }
@@ -952,6 +1129,9 @@ try{
 await init();
 events();
 renderHome();
+renderDailyGoal();
+updateAutoBackupInfo();
+createAutoBackup();
 render();
 if('serviceWorker'in navigator){
 navigator.serviceWorker.register('service-worker.js').catch(console.error)
