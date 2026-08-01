@@ -365,6 +365,118 @@ if(filteredIds.length>1)position=(position+1)%filteredIds.length;
 render();
 }
 
+
+function renderLevel(){
+  if(!window.DhV9)return;
+
+  const info=DhV9.levelInfo();
+  const currentStreak=Number(localStorage.getItem('km-streak')||1);
+  const longest=DhV9.updateLongestStreak(currentStreak);
+
+  if($('levelBadge'))$('levelBadge').textContent=`Lv.${info.level}`;
+  if($('levelTitle'))$('levelTitle').textContent=`Level ${info.level}`;
+  if($('levelXpText'))$('levelXpText').textContent=`${info.current} / ${info.target} EXP`;
+  if($('levelProgress'))$('levelProgress').style.width=`${info.percent}%`;
+  if($('longestStreak'))$('longestStreak').textContent=`${longest} ngày`;
+}
+
+function renderDailyChallenge(){
+  if(!window.DhV10)return;
+
+  const state=DhV10.challengeProgress();
+
+  if($('dailyChallengeText')){
+    $('dailyChallengeText').textContent=`${state.current} / ${state.target} lượt học`;
+  }
+
+  if($('dailyChallengeBar')){
+    $('dailyChallengeBar').style.width=`${state.percent}%`;
+  }
+
+  if($('dailyChallengeAction')){
+    $('dailyChallengeAction').textContent=
+      state.claimed
+        ? 'Đã nhận ✓'
+        : state.complete
+          ? 'Nhận 50 EXP'
+          : 'Bắt đầu';
+
+    $('dailyChallengeAction').disabled=state.claimed;
+  }
+
+  $('dailyChallengeCard')?.classList.toggle('complete',state.complete);
+}
+
+function handleDailyChallenge(){
+  if(!window.DhV10)return;
+
+  const state=DhV10.challengeProgress();
+
+  if(state.claimed)return;
+
+  if(state.complete){
+    if(DhV10.claimChallenge()){
+      renderLevel();
+      renderDailyChallenge();
+      alert('Bạn nhận được 50 EXP! 🎉');
+    }
+    return;
+  }
+
+  if(dueCards().length){
+    renderReview();
+    showView('reviewView');
+  }else{
+    startRandomPractice();
+  }
+}
+
+function renderV10Insights(){
+  if(!window.DhV10)return;
+
+  const summary=DhV10.activitySummary(30);
+
+  if($('insightActiveDays'))$('insightActiveDays').textContent=summary.activeDays;
+  if($('insightStudy'))$('insightStudy').textContent=summary.study;
+  if($('insightQuiz'))$('insightQuiz').textContent=summary.quiz;
+  if($('insightOcr'))$('insightOcr').textContent=summary.ocr;
+}
+
+function openNoteDialog(){
+  const card=current();
+  if(!card)return;
+
+  if($('noteWord'))$('noteWord').textContent=`${card.ko} · ${card.meaning}`;
+  if($('noteText'))$('noteText').value=card.note||'';
+
+  $('noteDialog')?.showModal();
+}
+
+async function saveCurrentNote(){
+  const card=current();
+  if(!card)return;
+
+  card.note=$('noteText')?.value.trim()||'';
+
+  await saveLessonState();
+  createAutoBackup();
+  $('noteDialog')?.close();
+}
+
+async function deleteCurrentNote(){
+  const card=current();
+  if(!card)return;
+
+  card.note='';
+
+  if($('noteText'))$('noteText').value='';
+
+  await saveLessonState();
+  createAutoBackup();
+  $('noteDialog')?.close();
+}
+
+
 function renderHome(){renderDailyGoal();renderLevel();renderDailyChallenge();
 const list=$('lessonList');list.innerHTML='';
 lessons.forEach((l,index)=>{
