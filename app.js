@@ -34,7 +34,7 @@ $('streakDays').textContent=localStorage.getItem('km-streak')||'1';
 renderReview();renderStats();
 }
 function openLesson(id,mode='all'){currentLessonId=id;let cs=lesson().cards;if(mode==='hard')cs=cs.filter(c=>c.hard);if(mode==='favorites')cs=cs.filter(c=>c.favorite);if(mode==='unchecked')cs=cs.filter(c=>!c.checked);filteredIds=cs.map(c=>c.id);position=0;showView('studyView');render()}
-function render(){renderHome();const c=current();if(!c){$('korean').textContent='Không có từ';$('pronunciation').textContent='';return}$('korean').textContent=c.ko;$('pronunciation').textContent=c.pron;$('meaning').textContent=c.meaning;$('exampleKo').textContent=c.example_ko;$('exampleVi').textContent='→ '+c.example_vi;$('tip').textContent=c.tip;$('dialogKo').textContent=c.dialog_ko;$('dialogVi').textContent=c.dialog_vi;$('counter').textContent=`${position+1} / ${filteredIds.length}`;const l=lesson(),n=l.cards.filter(x=>x.checked).length;$('checkedSummary').textContent=`Đã check: ${n} / ${l.cards.length}`;$('progressBar').style.width=`${n/Math.max(l.cards.length,1)*100}%`;$('favorite').textContent=c.favorite?'♥ Yêu thích':'♡ Yêu thích';$('favorite').classList.toggle('active',c.favorite);$('hard').textContent=c.hard?'★ Từ khó':'☆ Từ khó';$('hard').classList.toggle('hard',c.hard);$('checked').textContent=c.checked?'✓ Đã check':'✓ Chưa check';$('checked').classList.toggle('done',c.checked);$('flashcard').classList.remove('flipped')}
+function render(){renderHome();const c=current();if(!c){$('korean').textContent='Không có từ';$('pronunciation').textContent='';$('meaning').textContent='';return}$('korean').textContent=c.ko;$('pronunciation').textContent=c.pron;$('meaning').textContent=c.meaning;$('exampleKo').textContent=c.example_ko;$('exampleVi').textContent='→ '+c.example_vi;$('tip').textContent=c.tip;$('dialogKo').textContent=c.dialog_ko;$('dialogVi').textContent=c.dialog_vi;$('counter').textContent=`${position+1} / ${filteredIds.length}`;const l=lesson(),n=l.cards.filter(x=>x.checked).length;$('checkedSummary').textContent=`Đã check: ${n} / ${l.cards.length}`;$('progressBar').style.width=`${n/Math.max(l.cards.length,1)*100}%`;$('favorite').textContent=c.favorite?'♥ Yêu thích':'♡ Yêu thích';$('favorite').classList.toggle('active',c.favorite);$('hard').textContent=c.hard?'★ Từ khó':'☆ Từ khó';$('hard').classList.toggle('hard',c.hard);$('checked').textContent=c.checked?'✓ Đã check':'✓ Chưa check';$('checked').classList.toggle('done',c.checked);$('flashcard').classList.remove('flipped')}
 async function saveLessonState(){await putLesson(lesson());renderHome()}async function update(ch){Object.assign(current(),ch);await saveLessonState();render()}
 function applySearch(q){q=q.trim().toLowerCase();filteredIds=lesson().cards.filter(c=>`${c.ko} ${c.pron} ${c.meaning}`.toLowerCase().includes(q)).map(c=>c.id);position=0;render()}
 function speak(t){if(!speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.split('/')[0]);u.lang='ko-KR';u.rate=.82;speechSynthesis.speak(u)}
@@ -66,6 +66,79 @@ renderHome();renderReview();renderStats();
 alert('Đã khôi phục dữ liệu thành công')
 }catch(e){alert(e.message||'File không hợp lệ')}
 }
+
+function renderReview(){
+  const list = $('reviewList');
+  if (!list) return;
+
+  list.innerHTML = '';
+  const items = allCards().filter(card => !card.checked);
+
+  const summary = $('reviewSummary');
+  if (summary) {
+    summary.textContent = items.length
+      ? `${items.length} từ đang chờ ôn.`
+      : 'Bạn đã check hết các từ.';
+  }
+
+  if (!items.length) {
+    list.innerHTML = '<div class="empty">Không còn từ cần ôn 🎉</div>';
+    return;
+  }
+
+  items.forEach(card => {
+    const row = document.createElement('div');
+    row.className = 'review-row';
+
+    const icon = document.createElement('span');
+    icon.textContent = '🧠';
+
+    const main = document.createElement('div');
+    main.className = 'word-main';
+    main.innerHTML =
+      `<b>${card.ko}</b>` +
+      `<span>${card.pron} · ${card.meaning} · ${card.lessonTitle}</span>`;
+
+    const open = document.createElement('button');
+    open.textContent = 'Ôn';
+    open.addEventListener('click', () => {
+      currentLessonId = card.lessonId;
+      filteredIds = lesson().cards
+        .filter(item => !item.checked)
+        .map(item => item.id);
+      position = Math.max(0, filteredIds.indexOf(card.id));
+      showView('studyView');
+      render();
+    });
+
+    row.append(icon, main, open);
+    list.append(row);
+  });
+}
+
+function renderStats(){
+  const box = $('statsCards');
+  if (!box) return;
+
+  box.innerHTML = '';
+
+  lessons.forEach(item => {
+    const checked = item.cards.filter(card => card.checked).length;
+    const percent = Math.round(
+      checked / Math.max(item.cards.length, 1) * 100
+    );
+
+    const card = document.createElement('article');
+    card.className = 'stat-card';
+    card.innerHTML =
+      `<div class="stat-top"><b>${item.title}</b><span>${percent}%</span></div>` +
+      `<div class="progress"><span style="width:${percent}%"></span></div>` +
+      `<small>${checked} / ${item.cards.length} từ đã check</small>`;
+
+    box.append(card);
+  });
+}
+
 function events(){
 
 document.querySelectorAll('.bottom-nav button').forEach(btn=>btn.onclick=()=>{const v=btn.dataset.view;if(v==='studyView'&&(!filteredIds.length)){currentLessonId=lessons[0]?.id;filteredIds=lesson()?.cards.map(c=>c.id)||[];position=0;render()}if(v==='reviewView')renderReview();if(v==='statsView')renderStats();if(v==='manageView'){listMode='all';renderList()}showView(v);document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.toggle('active',x===btn))});
