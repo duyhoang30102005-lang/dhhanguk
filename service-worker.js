@@ -1,5 +1,5 @@
 
-const CACHE = 'dh-hanguk-v8-5-branding-final';
+const CACHE = 'dh-hanguk-v8-5-logo-fixed';
 const ASSETS = [
   './',
   'index.html',
@@ -9,9 +9,9 @@ const ASSETS = [
   'cards.json',
   'lessons.json',
   'manifest.webmanifest',
-  'icons/icon-180.png',
-  'icons/icon-192.png',
-  'icons/icon-512.png'
+  'icon-180.png',
+  'icon-192.png',
+  'icon-512.png'
 ];
 
 self.addEventListener('install', event => {
