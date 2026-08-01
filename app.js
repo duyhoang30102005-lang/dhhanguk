@@ -1082,37 +1082,176 @@ async function saveOcrCards(){
 }
 
 
-let quizState={questions:[],index:0,score:0,answered:false};
-function shuffle(array){return [...array].sort(()=>Math.random()-0.5)}
-function startQuiz(){
-  const cards=allCards().filter(card=>card.ko&&card.meaning);
-  if(cards.length<4)return alert('Cần ít nhất 4 từ có nghĩa để tạo quiz.');
-  const selected=shuffle(cards).slice(0,Math.min(10,cards.length));
-  quizState={questions:selected.map(card=>({card,options:shuffle([card.meaning,...shuffle(cards.filter(x=>x.id!==card.id)).slice(0,3).map(x=>x.meaning)])})),index:0,score:0,answered:false};
-  showView('quizView');renderQuizQuestion();
+let quizState={
+  questions:[],
+  index:0,
+  score:0,
+  answered:false,
+  mode:'all'
+};
+
+function shuffle(array){
+  return [...array].sort(()=>Math.random()-0.5);
 }
-function renderQuizQuestion(){
-  const q=quizState.questions[quizState.index];
-  if(!q){
-    $('quizProgress').textContent='Hoàn thành';
-    $('quizQuestion').textContent=`Bạn đúng ${quizState.score}/${quizState.questions.length} câu`;
-    $('quizOptions').innerHTML='';$('quizFeedback').textContent=quizState.score===quizState.questions.length?'Xuất sắc! 🎉':'Làm tốt lắm!';
-    $('quizNext').textContent='Làm lại';$('quizNext').disabled=false;$('quizNext').onclick=startQuiz;return;
+
+function quizPool(mode='all'){
+  const cards=allCards().filter(card=>card.ko&&card.meaning);
+
+  if(mode==='lesson'){
+    const currentId=currentLessonId||lessons[0]?.id;
+    return cards.filter(card=>card.lessonId===currentId);
   }
-  quizState.answered=false;$('quizProgress').textContent=`Câu ${quizState.index+1} / ${quizState.questions.length}`;
-  $('quizQuestion').textContent=q.card.ko;$('quizFeedback').textContent='';$('quizNext').textContent='Câu tiếp theo';$('quizNext').disabled=true;
-  $('quizNext').onclick=()=>{quizState.index+=1;renderQuizQuestion()};
-  const box=$('quizOptions');box.innerHTML='';
+
+  if(mode==='review'){
+    return cards.filter(card=>!card.checked);
+  }
+
+  if(mode==='favorite'){
+    return cards.filter(card=>card.favorite);
+  }
+
+  if(mode==='hard'){
+    return cards.filter(card=>card.hard);
+  }
+
+  return cards;
+}
+
+function updateQuizBestScore(){
+  const mode=$('quizMode')?.value||quizState.mode||'all';
+  const best=Number(localStorage.getItem(`km-quiz-best-${mode}`)||0);
+  if($('quizBestScore')){
+    $('quizBestScore').textContent=
+      best>0 ? `Điểm cao nhất: ${best}/30` : 'Điểm cao nhất: chưa có';
+  }
+}
+
+function saveQuizBestScore(){
+  const mode=quizState.mode||'all';
+  const key=`km-quiz-best-${mode}`;
+  const previous=Number(localStorage.getItem(key)||0);
+  if(quizState.score>previous){
+    localStorage.setItem(key,String(quizState.score));
+  }
+  updateQuizBestScore();
+}
+
+function buildQuizQuestion(card,sourceCards){
+  const wrongMeanings=shuffle(
+    sourceCards.filter(item=>item.id!==card.id)
+  )
+    .map(item=>item.meaning)
+    .filter((meaning,index,array)=>meaning&&array.indexOf(meaning)===index)
+    .slice(0,3);
+
+  return{
+    card,
+    options:shuffle([card.meaning,...wrongMeanings])
+  };
+}
+
+function startQuiz(mode){
+  const selectedMode=mode||$('quizMode')?.value||'all';
+  const pool=quizPool(selectedMode);
+
+  if(pool.length<4){
+    alert('Chế độ này cần ít nhất 4 từ có nghĩa. Hãy chọn chế độ khác hoặc thêm từ.');
+    return;
+  }
+
+  const selected=shuffle(pool).slice(0,Math.min(30,pool.length));
+
+  quizState={
+    questions:selected.map(card=>buildQuizQuestion(card,pool)),
+    index:0,
+    score:0,
+    answered:false,
+    mode:selectedMode
+  };
+
+  if($('quizMode'))$('quizMode').value=selectedMode;
+  updateQuizBestScore();
+  showView('quizView');
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion(){
+  const total=quizState.questions.length;
+  const q=quizState.questions[quizState.index];
+
+  if(!q){
+    saveQuizBestScore();
+
+    $('quizProgress').textContent='Hoàn thành';
+    $('quizProgressBar').style.width='100%';
+    $('quizQuestion').textContent=`Bạn đúng ${quizState.score}/${total} câu`;
+    $('quizOptions').innerHTML='';
+
+    const percent=Math.round(quizState.score/Math.max(total,1)*100);
+    $('quizFeedback').textContent=
+      percent===100 ? 'Xuất sắc! 🎉' :
+      percent>=80 ? 'Rất tốt! 🌟' :
+      percent>=60 ? 'Làm tốt lắm!' :
+      'Hãy ôn lại rồi thử tiếp nhé 💪';
+
+    $('quizNext').textContent='Làm lại 30 câu';
+    $('quizNext').disabled=false;
+    $('quizNext').onclick=()=>startQuiz(quizState.mode);
+    return;
+  }
+
+  quizState.answered=false;
+
+  $('quizProgress').textContent=`Câu ${quizState.index+1} / ${total}`;
+  $('quizProgressBar').style.width=
+    `${Math.round(quizState.index/Math.max(total,1)*100)}%`;
+  $('quizQuestion').textContent=q.card.ko;
+  $('quizFeedback').textContent='';
+  $('quizNext').textContent='Câu tiếp theo';
+  $('quizNext').disabled=true;
+  $('quizNext').onclick=()=>{
+    quizState.index+=1;
+    renderQuizQuestion();
+  };
+
+  const box=$('quizOptions');
+  box.innerHTML='';
+
   q.options.forEach(option=>{
-    const b=document.createElement('button');b.textContent=option;
-    b.onclick=()=>{
-      if(quizState.answered)return;quizState.answered=true;recordActivity('quiz',1);
-      if(option===q.card.meaning){quizState.score+=1;b.classList.add('correct');$('quizFeedback').textContent='Đúng rồi ✅'}
-      else{b.classList.add('wrong');$('quizFeedback').textContent=`Đáp án đúng: ${q.card.meaning}`;[...box.children].forEach(x=>{if(x.textContent===q.card.meaning)x.classList.add('correct')})}
+    const button=document.createElement('button');
+    button.textContent=option;
+
+    button.onclick=()=>{
+      if(quizState.answered)return;
+
+      quizState.answered=true;
+      recordActivity('quiz',1);
+
+      if(option===q.card.meaning){
+        quizState.score+=1;
+        button.classList.add('correct');
+        $('quizFeedback').textContent='Đúng rồi ✅';
+      }else{
+        button.classList.add('wrong');
+        $('quizFeedback').textContent=`Đáp án đúng: ${q.card.meaning}`;
+
+        [...box.children].forEach(child=>{
+          if(child.textContent===q.card.meaning){
+            child.classList.add('correct');
+          }
+        });
+      }
+
+      [...box.children].forEach(child=>child.disabled=true);
       $('quizNext').disabled=false;
-    };box.append(b);
+      $('quizProgressBar').style.width=
+        `${Math.round((quizState.index+1)/Math.max(total,1)*100)}%`;
+    };
+
+    box.append(button);
   });
 }
+
 function calculateAchievements(){
   const cards=allCards(),checked=cards.filter(c=>c.checked).length,favorites=cards.filter(c=>c.favorite).length,hard=cards.filter(c=>c.hard).length,streak=Number(localStorage.getItem('km-streak')||1),reviewed=cards.filter(c=>ensureSrs(c).repetitions>0).length;
   return[
@@ -1142,7 +1281,9 @@ $('srsAgain').onclick=()=>gradeCurrentCard('again');
 $('srsHard').onclick=()=>gradeCurrentCard('hard');
 $('srsGood').onclick=()=>gradeCurrentCard('good');
 $('srsEasy').onclick=()=>gradeCurrentCard('easy');
-$('openQuiz').onclick=startQuiz;
+$('openQuiz').onclick=()=>startQuiz('all');
+$('restartQuiz').onclick=()=>startQuiz($('quizMode').value);
+$('quizMode').onchange=updateQuizBestScore;
 $('openAchievements').onclick=()=>{renderAchievements();showView('achievementsView')};
 
 $('openOcr').onclick=openOcrDialog;

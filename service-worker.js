@@ -1,5 +1,5 @@
 
-const CACHE = 'dh-hanguk-v8-premium';
+const CACHE = 'dh-hanguk-v8-5-quiz30';
 const ASSETS = [
   './',
   'index.html',

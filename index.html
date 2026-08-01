@@ -88,7 +88,7 @@
         <button id="openFavorites"><span>❤️</span><b>Yêu thích</b><small id="favoriteCount">0 từ</small></button>
         <button id="openManage"><span>📝</span><b>Quản lý từ</b><small>Sửa, thêm, xóa</small></button>
         <button id="openReview"><span>🧠</span><b>Ôn SRS hôm nay</b><small id="reviewCount">0 từ đến hạn</small></button>
-        <button id="openQuiz"><span>📝</span><b>Quiz nhanh</b><small>10 câu trắc nghiệm</small></button>
+        <button id="openQuiz"><span>📝</span><b>Quiz nhanh</b><small>30 câu trắc nghiệm</small></button>
         <button id="openAchievements"><span>🏆</span><b>Thành tích</b><small id="achievementCount">0 huy hiệu</small></button>
       </div>
     </section>
@@ -177,7 +177,31 @@
 
 
     <section class="view" id="quizView">
-      <div class="quiz-head"><h2>📝 Quiz nhanh</h2><p id="quizProgress">Câu 1 / 10</p></div>
+      <div class="quiz-head">
+        <div>
+          <h2>📝 Quiz 30 câu</h2>
+          <small id="quizBestScore">Điểm cao nhất: chưa có</small>
+        </div>
+        <p id="quizProgress">Câu 1 / 30</p>
+      </div>
+
+      <div class="quiz-mode-bar">
+        <label>Chế độ
+          <select id="quizMode">
+            <option value="all">Tất cả từ</option>
+            <option value="lesson">Bài học hiện tại</option>
+            <option value="review">Từ chưa thuộc</option>
+            <option value="favorite">Từ yêu thích</option>
+            <option value="hard">Từ khó</option>
+          </select>
+        </label>
+        <button id="restartQuiz" type="button">Bắt đầu lại</button>
+      </div>
+
+      <div class="quiz-progress-track">
+        <span id="quizProgressBar" style="width:0%"></span>
+      </div>
+
       <div class="quiz-card">
         <div id="quizQuestion" class="quiz-question"></div>
         <div id="quizOptions" class="quiz-options"></div>
