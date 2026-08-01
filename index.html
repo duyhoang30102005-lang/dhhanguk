@@ -9,14 +9,14 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="stylesheet" href="styles.css">
-  <title>Korean Master Pro V5</title>
+  <title>Korean Master Pro V6</title>
 </head>
 <body>
 <div id="app">
   <header class="app-header">
     <div>
       <h1>🇰🇷 Korean Master Pro</h1>
-      <p id="headerSub">V5 Final · OCR nhiều ảnh + quản lý đầy đủ</p>
+      <p id="headerSub">V6 · SRS + Quiz + Thành tích</p>
     </div>
     <div class="header-actions">
       <button class="icon-button" id="darkMode">🌙</button>
@@ -53,7 +53,9 @@
         <button id="openHard"><span>⭐</span><b>Từ khó</b><small id="hardCount">0 từ</small></button>
         <button id="openFavorites"><span>❤️</span><b>Yêu thích</b><small id="favoriteCount">0 từ</small></button>
         <button id="openManage"><span>📝</span><b>Quản lý từ</b><small>Sửa, thêm, xóa</small></button>
-        <button id="openReview"><span>🧠</span><b>Ôn chưa thuộc</b><small id="reviewCount">0 từ</small></button>
+        <button id="openReview"><span>🧠</span><b>Ôn SRS hôm nay</b><small id="reviewCount">0 từ đến hạn</small></button>
+        <button id="openQuiz"><span>📝</span><b>Quiz nhanh</b><small>10 câu trắc nghiệm</small></button>
+        <button id="openAchievements"><span>🏆</span><b>Thành tích</b><small id="achievementCount">0 huy hiệu</small></button>
       </div>
     </section>
 
@@ -103,6 +105,16 @@
         <button id="hard">☆ Từ khó</button>
         <button id="checked">✓ Chưa check</button>
       </div>
+      <div class="srs-panel">
+        <p>Đánh giá mức độ nhớ</p>
+        <div class="srs-actions">
+          <button id="srsAgain">Again</button>
+          <button id="srsHard">Hard</button>
+          <button id="srsGood" class="primary">Good</button>
+          <button id="srsEasy">Easy</button>
+        </div>
+        <small id="srsDueInfo"></small>
+      </div>
       <div class="navigation">
         <button id="previous">← Trước</button>
         <button id="next" class="primary">Tiếp →</button>
@@ -111,8 +123,8 @@
 
     <section class="view" id="reviewView">
       <div class="review-head">
-        <h2>🧠 Ôn tập hôm nay</h2>
-        <p id="reviewSummary">Các từ chưa check sẽ xuất hiện ở đây.</p>
+        <h2>🧠 Ôn SRS hôm nay</h2>
+        <p id="reviewSummary">Các từ đến hạn ôn sẽ xuất hiện ở đây.</p>
       </div>
       <div id="reviewList" class="review-list"></div>
     </section>
@@ -120,6 +132,22 @@
     <section class="view" id="statsView">
       <h2>📊 Thống kê</h2>
       <div id="statsCards" class="stats-list"></div>
+    </section>
+
+
+    <section class="view" id="quizView">
+      <div class="quiz-head"><h2>📝 Quiz nhanh</h2><p id="quizProgress">Câu 1 / 10</p></div>
+      <div class="quiz-card">
+        <div id="quizQuestion" class="quiz-question"></div>
+        <div id="quizOptions" class="quiz-options"></div>
+        <p id="quizFeedback" class="quiz-feedback"></p>
+        <button id="quizNext" class="primary" disabled>Câu tiếp theo</button>
+      </div>
+    </section>
+
+    <section class="view" id="achievementsView">
+      <h2>🏆 Thành tích</h2>
+      <div id="achievementList" class="achievement-list"></div>
     </section>
 
     <section class="view" id="manageView">

@@ -151,3 +151,15 @@ dialog label{display:block;font-size:12px;font-weight:800;color:var(--accent);ma
   .lesson-controls{grid-template-columns:repeat(2,34px)}
   .lesson-controls button{width:34px;height:34px;font-size:13px}
 }
+
+.srs-panel{margin-top:10px;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:15px}
+.srs-panel p{margin:0 0 9px;font-weight:800}.srs-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.srs-actions button{padding:10px 5px;font-size:12px}#srsAgain{background:#fee2e2}#srsHard{background:#fef3c7}#srsEasy{background:#dcfce7}
+.srs-panel small{display:block;margin-top:8px;color:var(--muted)}
+.quiz-head{display:flex;justify-content:space-between;align-items:center}.quiz-card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px}
+.quiz-question{font-size:42px;font-weight:850;text-align:center;padding:28px 8px}.quiz-options{display:grid;gap:10px}.quiz-options button{text-align:left}
+.quiz-options button.correct{background:#dcfce7;border-color:#86efac}.quiz-options button.wrong{background:#fee2e2;border-color:#fca5a5}
+.quiz-feedback{min-height:24px;font-weight:800}#quizNext{width:100%}
+.achievement-list{display:grid;gap:10px}.achievement-card{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.achievement-card>span{font-size:30px}.achievement-card b{display:block}.achievement-card small{display:block;color:var(--muted);margin-top:3px}
+.achievement-card em{font-style:normal;font-size:12px;font-weight:800}.achievement-card.locked{opacity:.48;filter:grayscale(.8)}.achievement-card.unlocked{border-color:var(--accent)}

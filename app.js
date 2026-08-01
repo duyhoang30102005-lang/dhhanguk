@@ -110,6 +110,42 @@ async function deleteLesson(id){
   alert(`Đã xóa bài học “${target.title}”.`);
 }
 
+
+function ensureSrs(card){
+  if(!card.srs){
+    card.srs={interval:0,ease:2.5,due:new Date().toISOString(),repetitions:0,lapses:0,lastGrade:null};
+  }
+  return card.srs;
+}
+function dueCards(){
+  const now=Date.now();
+  return allCards().filter(card=>new Date(ensureSrs(card).due).getTime()<=now);
+}
+function addDays(date,days){return new Date(date.getTime()+days*86400000)}
+function formatDue(dateText){
+  const diff=new Date(dateText).getTime()-Date.now();
+  if(diff<=0)return 'Đến hạn ngay';
+  const hours=Math.max(1,Math.round(diff/3600000));
+  return hours<24?`Ôn lại sau khoảng ${hours} giờ`:`Ôn lại sau khoảng ${Math.round(hours/24)} ngày`;
+}
+async function gradeCurrentCard(grade){
+  const card=current();if(!card)return;
+  const srs=ensureSrs(card),now=new Date();
+  if(grade==='again'){
+    srs.interval=0.01;srs.lapses+=1;srs.repetitions=0;srs.ease=Math.max(1.3,srs.ease-0.2);
+  }else if(grade==='hard'){
+    srs.interval=Math.max(1,Math.round((srs.interval||1)*1.2));srs.repetitions+=1;srs.ease=Math.max(1.3,srs.ease-0.05);
+  }else if(grade==='good'){
+    srs.interval=srs.repetitions===0?1:srs.repetitions===1?3:Math.max(1,Math.round(srs.interval*srs.ease));srs.repetitions+=1;
+  }else{
+    srs.interval=srs.repetitions===0?4:Math.max(4,Math.round((srs.interval||1)*srs.ease*1.3));srs.repetitions+=1;srs.ease=Math.min(3.2,srs.ease+0.15);
+  }
+  srs.lastGrade=grade;srs.due=addDays(now,srs.interval).toISOString();card.checked=true;
+  await saveLessonState();renderHome();renderReview();renderStats();
+  if(filteredIds.length>1)position=(position+1)%filteredIds.length;
+  render();
+}
+
 function renderHome(){
 const list=$('lessonList');list.innerHTML='';
 lessons.forEach((l,index)=>{
@@ -152,15 +188,15 @@ wrap.append(b,controls);
 list.append(wrap)
 });
 const a=allCards(),learned=a.filter(c=>c.checked).length,review=a.filter(c=>!c.checked).length;
-$('hardCount').textContent=`${a.filter(c=>c.hard).length} từ`;$('favoriteCount').textContent=`${a.filter(c=>c.favorite).length} từ`;$('reviewCount').textContent=`${review} từ`;
+$('hardCount').textContent=`${a.filter(c=>c.hard).length} từ`;$('favoriteCount').textContent=`${a.filter(c=>c.favorite).length} từ`;$('reviewCount').textContent=`${dueCards().length} từ đến hạn`;
 $('totalCards').textContent=a.length;$('learnedCards').textContent=learned;$('reviewCards').textContent=review;
 const today=new Date().toISOString().slice(0,10),last=localStorage.getItem('km-last-open'),streak=Number(localStorage.getItem('km-streak')||1);
 if(last!==today){localStorage.setItem('km-last-open',today);localStorage.setItem('km-streak',String(last?streak+1:1))}
-$('streakDays').textContent=localStorage.getItem('km-streak')||'1';
+$('streakDays').textContent=localStorage.getItem('km-streak')||'1';const ac=calculateAchievements();if($('achievementCount'))$('achievementCount').textContent=`${ac.filter(x=>x.unlocked).length} huy hiệu`;
 renderReview();renderStats();
 }
 function openLesson(id,mode='all'){currentLessonId=id;let cs=lesson().cards;if(mode==='hard')cs=cs.filter(c=>c.hard);if(mode==='favorites')cs=cs.filter(c=>c.favorite);if(mode==='unchecked')cs=cs.filter(c=>!c.checked);filteredIds=cs.map(c=>c.id);position=0;showView('studyView');render()}
-function render(){renderHome();const c=current();if(!c){$('korean').textContent='Không có từ';$('pronunciation').textContent='';$('meaning').textContent='';return}$('korean').textContent=c.ko;$('pronunciation').textContent=c.pron;$('meaning').textContent=c.meaning;$('exampleKo').textContent=c.example_ko;$('exampleVi').textContent='→ '+c.example_vi;$('tip').textContent=c.tip;$('dialogKo').textContent=c.dialog_ko;$('dialogVi').textContent=c.dialog_vi;$('counter').textContent=`${position+1} / ${filteredIds.length}`;const l=lesson(),n=l.cards.filter(x=>x.checked).length;$('checkedSummary').textContent=`Đã check: ${n} / ${l.cards.length}`;$('progressBar').style.width=`${n/Math.max(l.cards.length,1)*100}%`;$('favorite').textContent=c.favorite?'♥ Yêu thích':'♡ Yêu thích';$('favorite').classList.toggle('active',c.favorite);$('hard').textContent=c.hard?'★ Từ khó':'☆ Từ khó';$('hard').classList.toggle('hard',c.hard);$('checked').textContent=c.checked?'✓ Đã check':'✓ Chưa check';$('checked').classList.toggle('done',c.checked);$('flashcard').classList.remove('flipped')}
+function render(){renderHome();const c=current();if(!c){$('korean').textContent='Không có từ';$('pronunciation').textContent='';$('meaning').textContent='';return}$('korean').textContent=c.ko;$('pronunciation').textContent=c.pron;$('meaning').textContent=c.meaning;$('exampleKo').textContent=c.example_ko;$('exampleVi').textContent='→ '+c.example_vi;$('tip').textContent=c.tip;$('dialogKo').textContent=c.dialog_ko;$('dialogVi').textContent=c.dialog_vi;$('counter').textContent=`${position+1} / ${filteredIds.length}`;const l=lesson(),n=l.cards.filter(x=>x.checked).length;$('checkedSummary').textContent=`Đã check: ${n} / ${l.cards.length}`;$('progressBar').style.width=`${n/Math.max(l.cards.length,1)*100}%`;$('favorite').textContent=c.favorite?'♥ Yêu thích':'♡ Yêu thích';$('favorite').classList.toggle('active',c.favorite);$('hard').textContent=c.hard?'★ Từ khó':'☆ Từ khó';$('hard').classList.toggle('hard',c.hard);$('checked').textContent=c.checked?'✓ Đã check':'✓ Chưa check';$('checked').classList.toggle('done',c.checked);$('flashcard').classList.remove('flipped');if($('srsDueInfo'))$('srsDueInfo').textContent=formatDue(ensureSrs(c).due)}
 async function saveLessonState(){await putLesson(lesson());renderHome()}async function update(ch){Object.assign(current(),ch);await saveLessonState();render()}
 function applySearch(q){q=q.trim().toLowerCase();filteredIds=lesson().cards.filter(c=>`${c.ko} ${c.pron} ${c.meaning}`.toLowerCase().includes(q)).map(c=>c.id);position=0;render()}
 function speak(t){if(!speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.split('/')[0]);u.lang='ko-KR';u.rate=.82;speechSynthesis.speak(u)}
@@ -194,54 +230,25 @@ alert('Đã khôi phục dữ liệu thành công')
 }
 
 function renderReview(){
-  const list = $('reviewList');
-  if (!list) return;
-
-  list.innerHTML = '';
-  const items = allCards().filter(card => !card.checked);
-
-  const summary = $('reviewSummary');
-  if (summary) {
-    summary.textContent = items.length
-      ? `${items.length} từ đang chờ ôn.`
-      : 'Bạn đã check hết các từ.';
-  }
-
-  if (!items.length) {
-    list.innerHTML = '<div class="empty">Không còn từ cần ôn 🎉</div>';
-    return;
-  }
-
-  items.forEach(card => {
-    const row = document.createElement('div');
-    row.className = 'review-row';
-
-    const icon = document.createElement('span');
-    icon.textContent = '🧠';
-
-    const main = document.createElement('div');
-    main.className = 'word-main';
-    main.innerHTML =
-      `<b>${card.ko}</b>` +
-      `<span>${card.pron} · ${card.meaning} · ${card.lessonTitle}</span>`;
-
-    const open = document.createElement('button');
-    open.textContent = 'Ôn';
-    open.addEventListener('click', () => {
-      currentLessonId = card.lessonId;
-      filteredIds = lesson().cards
-        .filter(item => !item.checked)
-        .map(item => item.id);
-      position = Math.max(0, filteredIds.indexOf(card.id));
-      showView('studyView');
-      render();
-    });
-
-    row.append(icon, main, open);
-    list.append(row);
+  const list=$('reviewList');if(!list)return;
+  list.innerHTML='';
+  const items=dueCards();
+  $('reviewSummary').textContent=items.length?`${items.length} từ đến hạn ôn.`:'Không có từ nào đến hạn.';
+  if(!items.length){list.innerHTML='<div class="empty">Hôm nay chưa có từ cần ôn 🎉</div>';return}
+  items.forEach(card=>{
+    const row=document.createElement('div');row.className='review-row';
+    const main=document.createElement('div');main.className='word-main';
+    main.innerHTML=`<b>${card.ko}</b><span>${card.pron} · ${card.meaning} · ${card.lessonTitle}</span>`;
+    const open=document.createElement('button');open.textContent='Ôn';
+    open.onclick=()=>{
+      currentLessonId=card.lessonId;
+      filteredIds=lesson().cards.filter(item=>new Date(ensureSrs(item).due).getTime()<=Date.now()).map(item=>item.id);
+      if(!filteredIds.length)filteredIds=[card.id];
+      position=Math.max(0,filteredIds.indexOf(card.id));showView('studyView');render();
+    };
+    row.append('🧠',main,open);list.append(row);
   });
 }
-
 function renderStats(){
   const box = $('statsCards');
   if (!box) return;
@@ -613,7 +620,66 @@ async function saveOcrCards(){
   );
 }
 
+
+let quizState={questions:[],index:0,score:0,answered:false};
+function shuffle(array){return [...array].sort(()=>Math.random()-0.5)}
+function startQuiz(){
+  const cards=allCards().filter(card=>card.ko&&card.meaning);
+  if(cards.length<4)return alert('Cần ít nhất 4 từ có nghĩa để tạo quiz.');
+  const selected=shuffle(cards).slice(0,Math.min(10,cards.length));
+  quizState={questions:selected.map(card=>({card,options:shuffle([card.meaning,...shuffle(cards.filter(x=>x.id!==card.id)).slice(0,3).map(x=>x.meaning)])})),index:0,score:0,answered:false};
+  showView('quizView');renderQuizQuestion();
+}
+function renderQuizQuestion(){
+  const q=quizState.questions[quizState.index];
+  if(!q){
+    $('quizProgress').textContent='Hoàn thành';
+    $('quizQuestion').textContent=`Bạn đúng ${quizState.score}/${quizState.questions.length} câu`;
+    $('quizOptions').innerHTML='';$('quizFeedback').textContent=quizState.score===quizState.questions.length?'Xuất sắc! 🎉':'Làm tốt lắm!';
+    $('quizNext').textContent='Làm lại';$('quizNext').disabled=false;$('quizNext').onclick=startQuiz;return;
+  }
+  quizState.answered=false;$('quizProgress').textContent=`Câu ${quizState.index+1} / ${quizState.questions.length}`;
+  $('quizQuestion').textContent=q.card.ko;$('quizFeedback').textContent='';$('quizNext').textContent='Câu tiếp theo';$('quizNext').disabled=true;
+  $('quizNext').onclick=()=>{quizState.index+=1;renderQuizQuestion()};
+  const box=$('quizOptions');box.innerHTML='';
+  q.options.forEach(option=>{
+    const b=document.createElement('button');b.textContent=option;
+    b.onclick=()=>{
+      if(quizState.answered)return;quizState.answered=true;
+      if(option===q.card.meaning){quizState.score+=1;b.classList.add('correct');$('quizFeedback').textContent='Đúng rồi ✅'}
+      else{b.classList.add('wrong');$('quizFeedback').textContent=`Đáp án đúng: ${q.card.meaning}`;[...box.children].forEach(x=>{if(x.textContent===q.card.meaning)x.classList.add('correct')})}
+      $('quizNext').disabled=false;
+    };box.append(b);
+  });
+}
+function calculateAchievements(){
+  const cards=allCards(),checked=cards.filter(c=>c.checked).length,favorites=cards.filter(c=>c.favorite).length,hard=cards.filter(c=>c.hard).length,streak=Number(localStorage.getItem('km-streak')||1),reviewed=cards.filter(c=>ensureSrs(c).repetitions>0).length;
+  return[
+    {icon:'🌱',title:'Bắt đầu',desc:'Có ít nhất 1 từ',unlocked:cards.length>=1},
+    {icon:'✅',title:'Học 10 từ',desc:'Check ít nhất 10 từ',unlocked:checked>=10},
+    {icon:'📚',title:'Học 50 từ',desc:'Check ít nhất 50 từ',unlocked:checked>=50},
+    {icon:'🔥',title:'Chuỗi 7 ngày',desc:'Mở app 7 ngày',unlocked:streak>=7},
+    {icon:'🧠',title:'Ôn tập',desc:'Đánh giá SRS ít nhất 10 từ',unlocked:reviewed>=10},
+    {icon:'❤️',title:'Bộ sưu tập',desc:'Yêu thích 10 từ',unlocked:favorites>=10},
+    {icon:'⭐',title:'Chinh phục từ khó',desc:'Đánh dấu 10 từ khó',unlocked:hard>=10}
+  ];
+}
+function renderAchievements(){
+  const list=$('achievementList');if(!list)return;list.innerHTML='';
+  calculateAchievements().forEach(item=>{
+    const card=document.createElement('article');card.className=`achievement-card ${item.unlocked?'unlocked':'locked'}`;
+    card.innerHTML=`<span>${item.icon}</span><div><b>${item.title}</b><small>${item.desc}</small></div><em>${item.unlocked?'Đã mở':'Chưa mở'}</em>`;
+    list.append(card);
+  });
+}
+
 function events(){
+$('srsAgain').onclick=()=>gradeCurrentCard('again');
+$('srsHard').onclick=()=>gradeCurrentCard('hard');
+$('srsGood').onclick=()=>gradeCurrentCard('good');
+$('srsEasy').onclick=()=>gradeCurrentCard('easy');
+$('openQuiz').onclick=startQuiz;
+$('openAchievements').onclick=()=>{renderAchievements();showView('achievementsView')};
 
 $('openOcr').onclick=openOcrDialog;
 $('manageOcr').onclick=openOcrDialog;
