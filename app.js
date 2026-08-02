@@ -648,7 +648,16 @@ function openDataLock(){
   if(window.DhDataLock)DhDataLock.open();
 }
 
-function renderHome(){renderDailyGoal();renderLevel();renderDailyChallenge();renderReminderSummary();renderV11Dashboard();renderDataLockStatus();
+
+function renderLearningFocusSummary(){
+  if(window.DhLearningFocus)DhLearningFocus.renderSummary();
+}
+
+function openLearningFocus(){
+  if(window.DhLearningFocus)DhLearningFocus.open();
+}
+
+function renderHome(){renderDailyGoal();renderLevel();renderDailyChallenge();renderReminderSummary();renderV11Dashboard();renderDataLockStatus();renderLearningFocusSummary();
 const list=$('lessonList');list.innerHTML='';
 lessons.forEach((l,index)=>{
 const checked=l.cards.filter(c=>c.checked).length;
@@ -1555,10 +1564,12 @@ function renderQuizQuestion(){
       recordActivity('quiz',1);DhV9.addXp(option===q.card.meaning?5:1);
 
       if(option===q.card.meaning){
+        if(window.DhLearningFocus)DhLearningFocus.recordCorrect(q.card.id);
         quizState.score+=1;quizState.combo+=1;quizState.bestCombo=Math.max(quizState.bestCombo,quizState.combo);
         button.classList.add('correct');
         $('quizFeedback').textContent=quizState.combo>=3?`Đúng rồi ✅ · Combo ${quizState.combo}!`:'Đúng rồi ✅';
       }else{
+        if(window.DhLearningFocus)DhLearningFocus.recordWrong(q.card.id);
         quizState.combo=0;
         button.classList.add('wrong');
         $('quizFeedback').textContent=`Đáp án đúng: ${q.card.meaning}`;
@@ -1602,6 +1613,12 @@ function renderAchievements(){
 }
 
 function events(){
+$('openLearningFocus').onclick=openLearningFocus;
+$('closeLearningFocus').onclick=()=>$('learningFocusDialog').close();
+$('studyFavorites').onclick=()=>DhLearningFocus.openFavorites();
+$('studyWrongAnswers').onclick=()=>DhLearningFocus.openWrongAnswers();
+$('focusStudyFavorites').onclick=()=>DhLearningFocus.openFavorites();
+$('focusStudyWrong').onclick=()=>DhLearningFocus.openWrongAnswers();
 $('openDataSourceInfo').onclick=()=>DhDataSourceInfo.open();
 $('closeDataSourceInfo').onclick=()=>$('dataSourceDialog').close();
 $('openDataLock').onclick=openDataLock;

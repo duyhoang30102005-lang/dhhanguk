@@ -1,5 +1,5 @@
 
-const CACHE = 'dh-hanguk-v11.2-safe-sync';
+const CACHE = 'dh-hanguk-v11.3-learning-focus';
 const ASSETS = [
   './',
   'index.html',

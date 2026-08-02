@@ -28,7 +28,7 @@
   <header class="app-header">
     <div>
       <h1><img class="brand-mark" src="icon-192.png" alt="">Dh한국</h1>
-      <p id="headerSub">V11.2 Safe Sync</p>
+      <p id="headerSub">V11.3 Learning Focus</p>
     </div>
     <div class="header-actions">
       <button class="icon-button" id="darkMode">🌙</button>
@@ -40,7 +40,7 @@
   <main>
     <section class="view active" id="homeView">
       <div class="hero">
-        <p class="eyebrow">DH HANGUK · VERSION 11.2</p>
+        <p class="eyebrow">DH HANGUK · VERSION 11.3</p>
         <h2 id="greeting">안녕하세요! Học thông minh hơn mỗi ngày</h2>
         <p>Learn Korean Smarter Every Day. · OCR, SRS, Quiz Pro và quản lý bài học.</p>
       </div>
@@ -118,6 +118,8 @@
         <button id="openRandomPractice" class="random-practice-button">🎲 Luyện ngẫu nhiên</button>
         <button id="openGlobalSearch">🔎 Tìm toàn bộ từ</button>
         <button id="continueLearning">▶️ Học tiếp</button>
+        <button id="studyFavorites">❤️ Học từ yêu thích</button>
+        <button id="studyWrongAnswers">❌ Học lại từ sai</button>
       </div>
 
       <h2 class="section-title">Bài học</h2>
@@ -134,6 +136,7 @@
         <button id="openLearningProfile"><span>🧭</span><b>Hồ sơ học tập</b><small id="learningProfileSummary">Phân tích tiến độ</small></button>
         <button id="openDataLock"><span>🔒</span><b>Khóa dữ liệu</b><small id="dataLockStatus">Đang kiểm tra</small></button>
         <button id="openDataSourceInfo"><span>🧬</span><b>Nguồn dữ liệu</b><small>Không ghi đè chỉnh sửa</small></button>
+        <button id="openLearningFocus"><span>🎯</span><b>Luyện trọng tâm</b><small id="learningFocusSummary">Đang phân tích</small></button>
         <button id="openReminder"><span>🔔</span><b>Nhắc học</b><small id="reminderSummary">Chưa đặt</small></button>
         <button id="checkDataHealth"><span>🛡️</span><b>Kiểm tra dữ liệu</b><small id="dataHealthSummary">Sẵn sàng</small></button>
       </div>
@@ -494,6 +497,32 @@
   <div id="dataSourceResults"></div>
 </dialog>
 
+
+<dialog id="learningFocusDialog" class="learning-focus-dialog">
+  <div class="dialog-header">
+    <div>
+      <h2>🎯 Luyện trọng tâm</h2>
+      <small>Tập trung vào nhóm từ cần cải thiện nhất.</small>
+    </div>
+    <button class="close-button" id="closeLearningFocus" type="button">×</button>
+  </div>
+
+  <div class="learning-focus-grid">
+    <article><b id="focusFavoriteCount">0</b><small>Yêu thích</small></article>
+    <article><b id="focusWrongCount">0</b><small>Từng trả lời sai</small></article>
+    <article><b id="focusUncheckedCount">0</b><small>Chưa check</small></article>
+    <article><b id="focusHardCount">0</b><small>Từ khó</small></article>
+  </div>
+
+  <div class="dialog-actions learning-focus-actions">
+    <button id="focusStudyFavorites" type="button">❤️ Học yêu thích</button>
+    <button id="focusStudyWrong" class="primary" type="button">❌ Học từ sai</button>
+  </div>
+
+  <h3>Từ cần luyện lại</h3>
+  <div id="wrongAnswerList" class="focus-list"></div>
+</dialog>
+
 <dialog id="noteDialog">
   <div class="dialog-header"><div><h2>🗒️ Ghi chú từ vựng</h2><small id="noteWord"></small></div><button class="close-button" id="closeNote" type="button">×</button></div>
   <label>Ghi chú cá nhân<textarea id="noteText" rows="7" placeholder="Cách nhớ, ngữ pháp liên quan, lỗi thường gặp..."></textarea></label>
@@ -590,6 +619,7 @@
 <script src="js/features/learning-profile.js"></script>
 <script src="js/features/data-lock.js"></script>
 <script src="js/features/data-source-info.js"></script>
+<script src="js/features/learning-focus.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

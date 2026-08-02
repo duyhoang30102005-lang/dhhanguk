@@ -746,3 +746,57 @@ body{
 @media(max-width:560px){
   .data-lock-overview{flex-direction:column}
 }
+
+
+/* Dh한국 V11.3 Learning Focus */
+.learning-focus-dialog{width:min(680px,calc(100vw - 24px))}
+.learning-focus-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+.learning-focus-grid article{
+  display:grid;
+  gap:4px;
+  text-align:center;
+  padding:14px 8px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:var(--panel);
+}
+.learning-focus-grid b{font-size:24px}
+.learning-focus-grid small{color:var(--muted)}
+.learning-focus-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  margin-bottom:16px;
+}
+.focus-list{
+  display:grid;
+  gap:8px;
+  max-height:42vh;
+  overflow:auto;
+}
+.focus-list-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  text-align:left;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel);
+}
+.focus-list-item span{display:grid;gap:3px}
+.focus-list-item small{color:var(--muted)}
+.focus-list-item strong{
+  white-space:nowrap;
+  font-size:12px;
+  color:#ef4444;
+}
+@media(max-width:620px){
+  .learning-focus-grid{grid-template-columns:repeat(2,1fr)}
+  .learning-focus-actions{grid-template-columns:1fr}
+}
