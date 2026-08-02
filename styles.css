@@ -710,3 +710,39 @@ body{
   .weekly-activity-chart{gap:4px}
   .learning-profile-grid{grid-template-columns:repeat(2,1fr)}
 }
+
+
+/* Dh한국 V11.1 Data Lock */
+#dataLockStatus.warning{color:#ef4444}
+.data-lock-overview{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px;
+  margin-bottom:12px;
+  border-radius:15px;
+}
+.data-lock-overview.healthy{
+  border:1px solid #22c55e;
+  background:color-mix(in srgb,#22c55e 10%,var(--panel));
+}
+.data-lock-overview.warning{
+  border:1px solid #ef4444;
+  background:color-mix(in srgb,#ef4444 10%,var(--panel));
+}
+.data-lock-overview span{color:var(--muted)}
+.data-lock-checks{display:grid;gap:9px}
+.data-lock-checks article{
+  display:grid;
+  gap:3px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel);
+}
+.data-lock-checks article.ok{border-color:#22c55e}
+.data-lock-checks article.bad{border-color:#ef4444}
+.data-lock-checks small{color:var(--muted)}
+@media(max-width:560px){
+  .data-lock-overview{flex-direction:column}
+}

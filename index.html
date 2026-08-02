@@ -28,7 +28,7 @@
   <header class="app-header">
     <div>
       <h1><img class="brand-mark" src="icon-192.png" alt="">Dh한국</h1>
-      <p id="headerSub">V11 Core</p>
+      <p id="headerSub">V11.2 Safe Sync</p>
     </div>
     <div class="header-actions">
       <button class="icon-button" id="darkMode">🌙</button>
@@ -40,7 +40,7 @@
   <main>
     <section class="view active" id="homeView">
       <div class="hero">
-        <p class="eyebrow">DH HANGUK · VERSION 11</p>
+        <p class="eyebrow">DH HANGUK · VERSION 11.2</p>
         <h2 id="greeting">안녕하세요! Học thông minh hơn mỗi ngày</h2>
         <p>Learn Korean Smarter Every Day. · OCR, SRS, Quiz Pro và quản lý bài học.</p>
       </div>
@@ -132,6 +132,8 @@
         <button id="openQuiz"><span>📝</span><b>Quiz nhanh</b><small>30 câu trắc nghiệm</small></button>
         <button id="openAchievements"><span>🏆</span><b>Thành tích</b><small id="achievementCount">0 huy hiệu</small></button>
         <button id="openLearningProfile"><span>🧭</span><b>Hồ sơ học tập</b><small id="learningProfileSummary">Phân tích tiến độ</small></button>
+        <button id="openDataLock"><span>🔒</span><b>Khóa dữ liệu</b><small id="dataLockStatus">Đang kiểm tra</small></button>
+        <button id="openDataSourceInfo"><span>🧬</span><b>Nguồn dữ liệu</b><small>Không ghi đè chỉnh sửa</small></button>
         <button id="openReminder"><span>🔔</span><b>Nhắc học</b><small id="reminderSummary">Chưa đặt</small></button>
         <button id="checkDataHealth"><span>🛡️</span><b>Kiểm tra dữ liệu</b><small id="dataHealthSummary">Sẵn sàng</small></button>
       </div>
@@ -468,6 +470,30 @@
   </div>
 </dialog>
 
+
+<dialog id="dataLockDialog">
+  <div class="dialog-header">
+    <div>
+      <h2>🔒 Kiểm tra phiên âm</h2>
+      <small>Đối chiếu trực tiếp dữ liệu đang được ứng dụng tải.</small>
+    </div>
+    <button class="close-button" id="closeDataLock" type="button">×</button>
+  </div>
+  <div id="dataLockResults"></div>
+</dialog>
+
+
+<dialog id="dataSourceDialog">
+  <div class="dialog-header">
+    <div>
+      <h2>🧬 Nguồn dữ liệu V11.2</h2>
+      <small>Kiểm tra dữ liệu đang được ứng dụng sử dụng.</small>
+    </div>
+    <button class="close-button" id="closeDataSourceInfo" type="button">×</button>
+  </div>
+  <div id="dataSourceResults"></div>
+</dialog>
+
 <dialog id="noteDialog">
   <div class="dialog-header"><div><h2>🗒️ Ghi chú từ vựng</h2><small id="noteWord"></small></div><button class="close-button" id="closeNote" type="button">×</button></div>
   <label>Ghi chú cá nhân<textarea id="noteText" rows="7" placeholder="Cách nhớ, ngữ pháp liên quan, lỗi thường gặp..."></textarea></label>
@@ -562,6 +588,8 @@
 <script src="js/features/data-health.js"></script>
 <script src="js/features/v11-dashboard.js"></script>
 <script src="js/features/learning-profile.js"></script>
+<script src="js/features/data-lock.js"></script>
+<script src="js/features/data-source-info.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

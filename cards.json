@@ -12,7 +12,15 @@
     "checked": false,
     "hard": false,
     "favorite": false,
-    "order": 1
+    "order": 1,
+    "srs": {
+      "interval": 0,
+      "ease": 2.5,
+      "due": "2026-08-02T03:16:54.087Z",
+      "repetitions": 0,
+      "lapses": 0,
+      "lastGrade": null
+    }
   },
   {
     "id": "card-2",
@@ -600,21 +608,6 @@
     "order": 40
   },
   {
-    "id": "card-41",
-    "ko": "간호사",
-    "pron": "gan ho sa",
-    "meaning": "Y tá",
-    "example_ko": "제 누나는 간호사입니다.",
-    "example_vi": "Chị gái tôi là y tá.",
-    "tip": "Trong thực tế cũng có thể hiểu là điều dưỡng.",
-    "dialog_ko": "A: 직업이 뭐예요?\nB: 간호사입니다.",
-    "dialog_vi": "A: Bạn làm nghề gì?\nB: Tôi là y tá.",
-    "checked": false,
-    "hard": false,
-    "favorite": false,
-    "order": 41
-  },
-  {
     "id": "card-42",
     "ko": "안녕하세요 / 안녕하십니까",
     "pron": "an nyeong ha se yo / an nyeong ha sim ni kka",
@@ -763,5 +756,28 @@
     "hard": false,
     "favorite": false,
     "order": 51
+  },
+  {
+    "ko": "간호사",
+    "pron": "kan hô sa",
+    "meaning": "Y tá",
+    "example_ko": "제 누나는 간호사입니다.",
+    "example_vi": "Chị gái tôi là y tá.",
+    "tip": "Trong thực tế cũng có thể hiểu là điều dưỡng.",
+    "dialog_ko": "A: 직업이 뭐예요?\nB: 간호사입니다.",
+    "dialog_vi": "A: Bạn làm nghề gì?\nB: Tôi là y tá.",
+    "checked": false,
+    "hard": false,
+    "favorite": false,
+    "id": "card-41",
+    "order": 41,
+    "srs": {
+      "interval": 0,
+      "ease": 2.5,
+      "due": "2026-08-02T03:17:29.792Z",
+      "repetitions": 0,
+      "lapses": 0,
+      "lastGrade": null
+    }
   }
 ]

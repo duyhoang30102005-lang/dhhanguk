@@ -35,18 +35,90 @@ function deleteLessonRecord(id){
     r.onerror=()=>rej(r.error);
   });
 }
+
+function mergeCardPreservingLocal(localCard,sourceCard){
+  if(!localCard)return structuredClone(sourceCard);
+  return{
+    ...structuredClone(sourceCard),
+    ...structuredClone(localCard),
+    id:localCard.id||sourceCard.id
+  };
+}
+
+function mergeLessonPreservingLocal(localLesson,sourceLesson){
+  if(!localLesson)return structuredClone(sourceLesson);
+
+  const localCards=new Map(
+    (localLesson.cards||[]).map(card=>[card.id,card])
+  );
+
+  const mergedCards=(sourceLesson.cards||[]).map(sourceCard=>
+    mergeCardPreservingLocal(localCards.get(sourceCard.id),sourceCard)
+  );
+
+  const sourceIds=new Set((sourceLesson.cards||[]).map(card=>card.id));
+
+  for(const localCard of localLesson.cards||[]){
+    if(!sourceIds.has(localCard.id)){
+      mergedCards.push(structuredClone(localCard));
+    }
+  }
+
+  return{
+    ...structuredClone(sourceLesson),
+    ...structuredClone(localLesson),
+    cards:mergedCards,
+    id:localLesson.id||sourceLesson.id
+  };
+}
+
+async function loadSourceLessons(){
+  const response=await fetch(`lessons.json?v=11.2.0`,{cache:'no-store'});
+  if(!response.ok)throw new Error(`Không tải được lessons.json (${response.status})`);
+
+  const contentType=response.headers.get('content-type')||'';
+  if(!contentType.includes('json')){
+    throw new Error('lessons.json đang bị máy chủ trả về sai định dạng');
+  }
+
+  const sourceLessons=await response.json();
+
+  if(!Array.isArray(sourceLessons)||!sourceLessons.length){
+    throw new Error('Dữ liệu bài học trống');
+  }
+
+  return sourceLessons;
+}
+
+async function syncSourceWithoutOverwritingUserData(localLessons){
+  const sourceLessons=await loadSourceLessons();
+
+  if(!localLessons.length){
+    await putAllLessons(sourceLessons);
+    return sourceLessons;
+  }
+
+  const localMap=new Map(localLessons.map(item=>[item.id,item]));
+  const merged=sourceLessons.map(sourceLesson=>
+    mergeLessonPreservingLocal(localMap.get(sourceLesson.id),sourceLesson)
+  );
+
+  const sourceIds=new Set(sourceLessons.map(item=>item.id));
+
+  for(const localLesson of localLessons){
+    if(!sourceIds.has(localLesson.id)){
+      merged.push(structuredClone(localLesson));
+    }
+  }
+
+  await putAllLessons(merged);
+  return merged;
+}
+
 async function init(){
 db=await openDB();
-lessons=await getAllLessons();
-if(!lessons.length){
-const response=await fetch('lessons.json',{cache:'no-store'});
-if(!response.ok)throw new Error(`Không tải được lessons.json (${response.status})`);
-const contentType=response.headers.get('content-type')||'';
-if(!contentType.includes('json'))throw new Error('lessons.json đang bị máy chủ trả về sai định dạng');
-lessons=await response.json();
-if(!Array.isArray(lessons)||!lessons.length)throw new Error('Dữ liệu bài học trống');
-await putAllLessons(lessons)
-}
+const localLessons=await getAllLessons();
+lessons=await syncSourceWithoutOverwritingUserData(localLessons);
 currentLessonId=lessons[0]?.id||null
 }
 function lesson(){return lessons.find(l=>l.id===currentLessonId)}function current(){const id=filteredIds[position];return lesson()?.cards.find(c=>c.id===id)}
@@ -567,7 +639,16 @@ function openLearningProfile(){
   if(window.DhLearningProfile)DhLearningProfile.open();
 }
 
-function renderHome(){renderDailyGoal();renderLevel();renderDailyChallenge();renderReminderSummary();renderV11Dashboard();
+
+function renderDataLockStatus(){
+  if(window.DhDataLock)DhDataLock.renderStatus();
+}
+
+function openDataLock(){
+  if(window.DhDataLock)DhDataLock.open();
+}
+
+function renderHome(){renderDailyGoal();renderLevel();renderDailyChallenge();renderReminderSummary();renderV11Dashboard();renderDataLockStatus();
 const list=$('lessonList');list.innerHTML='';
 lessons.forEach((l,index)=>{
 const checked=l.cards.filter(c=>c.checked).length;
@@ -1521,6 +1602,10 @@ function renderAchievements(){
 }
 
 function events(){
+$('openDataSourceInfo').onclick=()=>DhDataSourceInfo.open();
+$('closeDataSourceInfo').onclick=()=>$('dataSourceDialog').close();
+$('openDataLock').onclick=openDataLock;
+$('closeDataLock').onclick=()=>$('dataLockDialog').close();
 $('openProgress').onclick=openV11Progress;
 $('closeProgress').onclick=()=>$('progressDialog').close();
 $('editWeeklyGoal').onclick=()=>DhV11Dashboard.openGoal();
