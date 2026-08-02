@@ -533,3 +533,47 @@ body{
 .v10-insight-grid b{display:block;font-size:24px}.v10-insight-grid small{display:block;color:var(--muted);margin-top:4px}
 #noteDialog{max-width:560px}#noteDialog textarea{min-height:180px}
 @media(max-width:620px){.daily-challenge-card{grid-template-columns:auto 1fr}.daily-challenge-card button{grid-column:1/-1;width:100%}.v10-insight-grid{grid-template-columns:repeat(2,1fr)}}
+
+
+/* ===============================
+   Dh한국 V10.2 Web Upgrade
+   =============================== */
+.global-search-dialog{width:min(680px,calc(100vw - 24px))}
+.global-search-dialog>input{margin-bottom:12px}
+.global-search-count{color:var(--muted);margin:12px 0}
+.global-search-results{display:grid;gap:9px;max-height:55vh;overflow:auto}
+.global-search-result{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(90px,auto) 1fr;
+  gap:3px 12px;
+  text-align:left;
+  padding:13px 46px 13px 14px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:var(--panel);
+}
+.global-search-result:hover{transform:translateY(-1px)}
+.global-search-word{font-size:20px;font-weight:900}
+.global-search-meaning{font-weight:800}
+.global-search-result small{grid-column:1/-1;color:var(--muted)}
+.global-search-flags{position:absolute;right:13px;top:13px}
+.global-search-filters{margin-top:2px}
+.data-health-results{line-height:1.6}
+.data-health-overview{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px;
+  border-radius:15px;
+  margin-bottom:12px;
+}
+.data-health-overview.healthy{background:color-mix(in srgb,#22c55e 12%,var(--panel));border:1px solid #22c55e}
+.data-health-overview.warning{background:color-mix(in srgb,#f59e0b 13%,var(--panel));border:1px solid #f59e0b}
+.data-health-overview span{color:var(--muted)}
+.data-health-results ul{padding-left:22px}
+@media(max-width:560px){
+  .global-search-result{grid-template-columns:1fr;padding-right:42px}
+  .global-search-result small{grid-column:auto}
+  .data-health-overview{flex-direction:column}
+}

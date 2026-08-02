@@ -1,6 +1,6 @@
 {
   "name": "dhhanguk",
-  "version": "10.0.1",
+  "version": "10.2.0",
   "private": true,
   "scripts": {
     "dev": "python3 -m http.server 4173",

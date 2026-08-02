@@ -492,7 +492,279 @@ async function deleteCurrentNote(){
 }
 
 
-function renderHome(){renderDailyGoal();renderLevel();renderDailyChallenge();
+
+const GLOBAL_SEARCH_FILTER_KEY='dh-global-search-filter';
+const REMINDER_KEY='dh-study-reminder';
+const LAST_STUDY_KEY='dh-last-study';
+
+function getLastStudy(){
+  try{
+    return JSON.parse(localStorage.getItem(LAST_STUDY_KEY)||'null');
+  }catch{
+    return null;
+  }
+}
+
+function rememberStudyPosition(){
+  const card=current();
+  if(!currentLessonId||!card)return;
+
+  localStorage.setItem(
+    LAST_STUDY_KEY,
+    JSON.stringify({
+      lessonId:currentLessonId,
+      cardId:card.id,
+      savedAt:new Date().toISOString()
+    })
+  );
+}
+
+function continueLearning(){
+  const saved=getLastStudy();
+  const targetLesson=saved&&lessons.find(item=>item.id===saved.lessonId);
+
+  if(!targetLesson){
+    const first=lessons[0];
+    if(!first){
+      alert('Chưa có bài học để tiếp tục.');
+      return;
+    }
+    openLesson(first.id);
+    return;
+  }
+
+  openLesson(targetLesson.id);
+
+  const cardIndex=filteredIds.indexOf(saved.cardId);
+  if(cardIndex>=0){
+    position=cardIndex;
+    render();
+  }
+}
+
+function globalSearchPool(){
+  return lessons.flatMap(item=>
+    item.cards.map(card=>({
+      lessonId:item.id,
+      lessonTitle:item.title,
+      lessonBook:item.book,
+      card
+    }))
+  );
+}
+
+function renderGlobalSearch(){
+  const query=$('globalSearchInput').value.trim();
+  const filter=localStorage.getItem(GLOBAL_SEARCH_FILTER_KEY)||'all';
+  const resultsContainer=$('globalSearchResults');
+
+  if(!query){
+    $('globalSearchCount').textContent='Nhập từ khóa để tìm.';
+    resultsContainer.innerHTML='<div class="empty">Bạn có thể tìm tiếng Hàn, tiếng Việt, phiên âm hoặc nội dung ví dụ.</div>';
+    return;
+  }
+
+  let results=globalSearchPool().filter(item=>
+    window.DhV9
+      ? DhV9.smartSearchMatch(item.card,query)
+      : `${item.card.ko} ${item.card.pron} ${item.card.meaning}`.toLowerCase().includes(query.toLowerCase())
+  );
+
+  if(filter==='favorites')results=results.filter(item=>item.card.favorite);
+  if(filter==='hard')results=results.filter(item=>item.card.hard);
+  if(filter==='unchecked')results=results.filter(item=>!item.card.checked);
+
+  $('globalSearchCount').textContent=`Tìm thấy ${results.length} kết quả`;
+
+  if(!results.length){
+    resultsContainer.innerHTML='<div class="empty">Không tìm thấy từ phù hợp.</div>';
+    return;
+  }
+
+  resultsContainer.innerHTML=results.slice(0,100).map(item=>`
+    <button class="global-search-result" data-lesson-id="${item.lessonId}" data-card-id="${item.card.id}">
+      <span class="global-search-word">${item.card.ko}</span>
+      <span class="global-search-meaning">${item.card.meaning||'Chưa có nghĩa'}</span>
+      <small>${item.lessonTitle}${item.lessonBook?` · ${item.lessonBook}`:''}</small>
+      <span class="global-search-flags">${item.card.favorite?'❤️ ':''}${item.card.hard?'⭐ ':''}${item.card.checked?'✅':''}</span>
+    </button>
+  `).join('');
+
+  resultsContainer.querySelectorAll('.global-search-result').forEach(button=>{
+    button.onclick=()=>{
+      const lessonId=button.dataset.lessonId;
+      const cardId=button.dataset.cardId;
+      openLesson(lessonId);
+      const index=filteredIds.indexOf(cardId);
+      if(index>=0){
+        position=index;
+        render();
+      }
+      $('globalSearchDialog').close();
+    };
+  });
+}
+
+function openGlobalSearch(){
+  $('globalSearchInput').value='';
+  const filter=localStorage.getItem(GLOBAL_SEARCH_FILTER_KEY)||'all';
+
+  document.querySelectorAll('[data-global-filter]').forEach(button=>{
+    button.classList.toggle('active',button.dataset.globalFilter===filter);
+  });
+
+  renderGlobalSearch();
+  $('globalSearchDialog').showModal();
+  setTimeout(()=>$('globalSearchInput').focus(),60);
+}
+
+function getReminder(){
+  try{
+    return JSON.parse(localStorage.getItem(REMINDER_KEY)||'{"enabled":false,"time":"20:00","lastShown":""}');
+  }catch{
+    return {enabled:false,time:'20:00',lastShown:''};
+  }
+}
+
+function renderReminderSummary(){
+  const reminder=getReminder();
+  if($('reminderSummary')){
+    $('reminderSummary').textContent=reminder.enabled?`Mỗi ngày ${reminder.time}`:'Chưa đặt';
+  }
+}
+
+function openReminderDialog(){
+  const reminder=getReminder();
+  $('reminderTime').value=reminder.time||'20:00';
+  $('reminderEnabled').checked=Boolean(reminder.enabled);
+  $('reminderDialog').showModal();
+}
+
+async function saveReminder(){
+  const enabled=$('reminderEnabled').checked;
+  const time=$('reminderTime').value||'20:00';
+
+  if(enabled&&'Notification' in window&&Notification.permission==='default'){
+    try{
+      await Notification.requestPermission();
+    }catch{}
+  }
+
+  localStorage.setItem(
+    REMINDER_KEY,
+    JSON.stringify({
+      enabled,
+      time,
+      lastShown:getReminder().lastShown||''
+    })
+  );
+
+  renderReminderSummary();
+  $('reminderDialog').close();
+}
+
+function clearReminder(){
+  localStorage.setItem(
+    REMINDER_KEY,
+    JSON.stringify({enabled:false,time:'20:00',lastShown:''})
+  );
+  renderReminderSummary();
+  $('reminderDialog').close();
+}
+
+function checkStudyReminder(){
+  const reminder=getReminder();
+  if(!reminder.enabled)return;
+
+  const now=new Date();
+  const [hours,minutes]=String(reminder.time||'20:00').split(':').map(Number);
+  const due=new Date();
+  due.setHours(hours||0,minutes||0,0,0);
+  const today=dateKey();
+
+  if(now<due||reminder.lastShown===today)return;
+
+  const message='Đến giờ học tiếng Hàn rồi! Hãy hoàn thành mục tiêu hôm nay nhé.';
+
+  if('Notification' in window&&Notification.permission==='granted'){
+    try{
+      new Notification('Dh한국', {
+        body:message,
+        icon:'icon-192.png'
+      });
+    }catch{
+      alert(message);
+    }
+  }else{
+    alert(message);
+  }
+
+  reminder.lastShown=today;
+  localStorage.setItem(REMINDER_KEY,JSON.stringify(reminder));
+}
+
+function inspectDataHealth(){
+  const issues=[];
+  const lessonIds=new Set();
+  const cardIds=new Set();
+  let totalCards=0;
+  let missingMeanings=0;
+  let missingKorean=0;
+  let duplicateCards=0;
+
+  lessons.forEach((item,lessonIndex)=>{
+    if(!item.id)issues.push(`Bài học thứ ${lessonIndex+1} thiếu ID.`);
+    if(item.id&&lessonIds.has(item.id))issues.push(`Trùng ID bài học: ${item.id}`);
+    if(item.id)lessonIds.add(item.id);
+    if(!item.title)issues.push(`Bài học ${item.id||lessonIndex+1} thiếu tên.`);
+    if(!Array.isArray(item.cards)){
+      issues.push(`Bài học ${item.title||item.id} không có danh sách cards hợp lệ.`);
+      return;
+    }
+
+    item.cards.forEach((card,cardIndex)=>{
+      totalCards+=1;
+      if(!card.id)issues.push(`Từ thứ ${cardIndex+1} trong ${item.title} thiếu ID.`);
+      if(card.id&&cardIds.has(card.id))duplicateCards+=1;
+      if(card.id)cardIds.add(card.id);
+      if(!String(card.ko||'').trim())missingKorean+=1;
+      if(!String(card.meaning||'').trim())missingMeanings+=1;
+    });
+  });
+
+  if(duplicateCards)issues.push(`${duplicateCards} ID flashcard bị trùng.`);
+  if(missingKorean)issues.push(`${missingKorean} flashcard thiếu từ tiếng Hàn.`);
+  if(missingMeanings)issues.push(`${missingMeanings} flashcard thiếu nghĩa.`);
+
+  return {
+    issues,
+    totalLessons:lessons.length,
+    totalCards
+  };
+}
+
+function openDataHealth(){
+  const report=inspectDataHealth();
+  const healthy=!report.issues.length;
+
+  $('dataHealthSummary').textContent=healthy?'Dữ liệu tốt':`${report.issues.length} cảnh báo`;
+  $('dataHealthResults').innerHTML=`
+    <div class="data-health-overview ${healthy?'healthy':'warning'}">
+      <b>${healthy?'✅ Dữ liệu đang ổn':'⚠️ Có cảnh báo cần xem'}</b>
+      <span>${report.totalLessons} bài học · ${report.totalCards} flashcard</span>
+    </div>
+    ${
+      healthy
+        ? '<p>Không phát hiện ID trùng, bài học hỏng hoặc flashcard thiếu trường bắt buộc.</p>'
+        : `<ul>${report.issues.map(issue=>`<li>${issue}</li>`).join('')}</ul>`
+    }
+    <p class="backup-note">Nên xuất một bản sao lưu trước khi sửa hoặc xóa nhiều dữ liệu.</p>
+  `;
+
+  $('dataHealthDialog').showModal();
+}
+
+function renderHome(){renderDailyGoal();renderLevel();renderDailyChallenge();renderReminderSummary();
 const list=$('lessonList');list.innerHTML='';
 lessons.forEach((l,index)=>{
 const checked=l.cards.filter(c=>c.checked).length;
@@ -1446,6 +1718,23 @@ function renderAchievements(){
 }
 
 function events(){
+$('openGlobalSearch').onclick=openGlobalSearch;
+$('closeGlobalSearch').onclick=()=>$('globalSearchDialog').close();
+$('globalSearchInput').oninput=renderGlobalSearch;
+document.querySelectorAll('[data-global-filter]').forEach(button=>{
+  button.onclick=()=>{
+    localStorage.setItem(GLOBAL_SEARCH_FILTER_KEY,button.dataset.globalFilter);
+    document.querySelectorAll('[data-global-filter]').forEach(item=>item.classList.toggle('active',item===button));
+    renderGlobalSearch();
+  };
+});
+$('continueLearning').onclick=continueLearning;
+$('openReminder').onclick=openReminderDialog;
+$('closeReminder').onclick=()=>$('reminderDialog').close();
+$('saveReminder').onclick=saveReminder;
+$('clearReminder').onclick=clearReminder;
+$('checkDataHealth').onclick=openDataHealth;
+$('closeDataHealth').onclick=()=>$('dataHealthDialog').close();
 $('dailyChallengeAction').onclick=handleDailyChallenge;
 $('noteCard').onclick=openNoteDialog;
 $('closeNote').onclick=()=>$('noteDialog').close();

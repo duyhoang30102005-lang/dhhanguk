@@ -28,7 +28,7 @@
   <header class="app-header">
     <div>
       <h1><img class="brand-mark" src="icon-192.png" alt="">Dh한국</h1>
-      <p id="headerSub">V10 Ultimate · LTS</p>
+      <p id="headerSub">V10.2 Web Upgrade</p>
     </div>
     <div class="header-actions">
       <button class="icon-button" id="darkMode">🌙</button>
@@ -40,7 +40,7 @@
   <main>
     <section class="view active" id="homeView">
       <div class="hero">
-        <p class="eyebrow">DH HANGUK · VERSION 10</p>
+        <p class="eyebrow">DH HANGUK · VERSION 10.2</p>
         <h2 id="greeting">안녕하세요! Học thông minh hơn mỗi ngày</h2>
         <p>Learn Korean Smarter Every Day. · OCR, SRS, Quiz Pro và quản lý bài học.</p>
       </div>
@@ -98,6 +98,8 @@
         <button id="openAllCards">📚 Học tất cả</button>
         <button id="openOcr" class="ocr-home-button">📷 Quét ảnh từ vựng</button>
         <button id="openRandomPractice" class="random-practice-button">🎲 Luyện ngẫu nhiên</button>
+        <button id="openGlobalSearch">🔎 Tìm toàn bộ từ</button>
+        <button id="continueLearning">▶️ Học tiếp</button>
       </div>
 
       <h2 class="section-title">Bài học</h2>
@@ -111,6 +113,8 @@
         <button id="openReview"><span>🧠</span><b>Ôn SRS hôm nay</b><small id="reviewCount">0 từ đến hạn</small></button>
         <button id="openQuiz"><span>📝</span><b>Quiz nhanh</b><small>30 câu trắc nghiệm</small></button>
         <button id="openAchievements"><span>🏆</span><b>Thành tích</b><small id="achievementCount">0 huy hiệu</small></button>
+        <button id="openReminder"><span>🔔</span><b>Nhắc học</b><small id="reminderSummary">Chưa đặt</small></button>
+        <button id="checkDataHealth"><span>🛡️</span><b>Kiểm tra dữ liệu</b><small id="dataHealthSummary">Sẵn sàng</small></button>
       </div>
     </section>
 
@@ -319,6 +323,68 @@
 </dialog>
 
 
+
+
+<dialog id="globalSearchDialog" class="global-search-dialog">
+  <div class="dialog-header">
+    <div>
+      <h2>🔎 Tìm toàn bộ từ</h2>
+      <small>Tìm trong tất cả bài học, nghĩa, phiên âm và ví dụ.</small>
+    </div>
+    <button class="close-button" id="closeGlobalSearch" type="button">×</button>
+  </div>
+
+  <input id="globalSearchInput" type="search" placeholder="Ví dụ: 학교, trường học, hakgyo...">
+
+  <div class="filter-tabs global-search-filters">
+    <button class="active" data-global-filter="all">Tất cả</button>
+    <button data-global-filter="favorites">Yêu thích</button>
+    <button data-global-filter="hard">Từ khó</button>
+    <button data-global-filter="unchecked">Chưa check</button>
+  </div>
+
+  <p id="globalSearchCount" class="global-search-count">Nhập từ khóa để tìm.</p>
+  <div id="globalSearchResults" class="global-search-results"></div>
+</dialog>
+
+<dialog id="reminderDialog">
+  <div class="dialog-header">
+    <div>
+      <h2>🔔 Nhắc học hằng ngày</h2>
+      <small>Ứng dụng sẽ nhắc khi bạn mở web sau giờ đã chọn.</small>
+    </div>
+    <button class="close-button" id="closeReminder" type="button">×</button>
+  </div>
+
+  <label>Giờ nhắc
+    <input id="reminderTime" type="time" value="20:00">
+  </label>
+
+  <label class="smart-toggle">
+    <input id="reminderEnabled" type="checkbox">
+    Bật nhắc học
+  </label>
+
+  <p class="backup-note">
+    Trình duyệt có thể yêu cầu quyền thông báo. Đây chưa phải thông báo nền khi web đóng.
+  </p>
+
+  <div class="dialog-actions">
+    <button id="clearReminder" class="secondary" type="button">Tắt nhắc</button>
+    <button id="saveReminder" class="primary" type="button">💾 Lưu</button>
+  </div>
+</dialog>
+
+<dialog id="dataHealthDialog">
+  <div class="dialog-header">
+    <div>
+      <h2>🛡️ Kiểm tra dữ liệu</h2>
+      <small>Kiểm tra bài học, flashcard và trường dữ liệu quan trọng.</small>
+    </div>
+    <button class="close-button" id="closeDataHealth" type="button">×</button>
+  </div>
+  <div id="dataHealthResults" class="data-health-results"></div>
+</dialog>
 
 <dialog id="noteDialog">
   <div class="dialog-header"><div><h2>🗒️ Ghi chú từ vựng</h2><small id="noteWord"></small></div><button class="close-button" id="closeNote" type="button">×</button></div>
