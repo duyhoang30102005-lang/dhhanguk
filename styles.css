@@ -577,3 +577,86 @@ body{
   .global-search-result small{grid-column:auto}
   .data-health-overview{flex-direction:column}
 }
+
+
+/* ===============================
+   Dh한국 V10.4 Smart Learning
+   =============================== */
+.global-search-options{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+.global-search-options label{
+  display:grid;
+  gap:6px;
+  color:var(--muted);
+  font-size:13px;
+  font-weight:800;
+}
+.smart-learning-dialog{width:min(720px,calc(100vw - 24px))}
+.smart-learning-overview{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+.smart-learning-overview article{
+  display:grid;
+  gap:4px;
+  text-align:center;
+  padding:14px 8px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--panel);
+}
+.smart-learning-overview b{font-size:24px}
+.smart-learning-overview small{color:var(--muted)}
+.smart-learning-actions{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:9px;
+  margin-bottom:16px;
+}
+.smart-learning-list{
+  display:grid;
+  gap:8px;
+  max-height:44vh;
+  overflow:auto;
+}
+.smart-learning-item{
+  position:relative;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:5px 12px;
+  text-align:left;
+  padding:13px 14px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:var(--panel);
+}
+.smart-learning-item span:first-child{display:grid;gap:3px}
+.smart-learning-item b{font-size:18px}
+.smart-learning-item small{color:var(--muted)}
+.smart-learning-item em{
+  grid-column:1/-1;
+  color:var(--muted);
+  font-size:12px;
+  font-style:normal;
+}
+.smart-learning-score{
+  display:grid;
+  place-items:center;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  color:white;
+  font-weight:900;
+}
+@media(max-width:620px){
+  .global-search-options{grid-template-columns:1fr}
+  .smart-learning-overview{grid-template-columns:repeat(2,1fr)}
+  .smart-learning-actions{grid-template-columns:1fr}
+}

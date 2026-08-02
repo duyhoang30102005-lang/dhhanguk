@@ -1,5 +1,5 @@
 
-const CACHE = 'dh-hanguk-v10.3-modular-foundation';
+const CACHE = 'dh-hanguk-v10.4-smart-learning';
 const ASSETS = [
   './',
   'index.html',

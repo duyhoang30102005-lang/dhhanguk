@@ -554,7 +554,16 @@ function openDataHealth(){
   return window.DhDataHealth.open();
 }
 
-function renderHome(){renderDailyGoal();renderLevel();renderDailyChallenge();renderReminderSummary();
+
+function renderSmartLearningSummary(){
+  return window.DhSmartLearning.renderSummary();
+}
+
+function openSmartLearning(){
+  return window.DhSmartLearning.open();
+}
+
+function renderHome(){renderDailyGoal();renderLevel();renderDailyChallenge();renderReminderSummary();renderSmartLearningSummary();
 const list=$('lessonList');list.innerHTML='';
 lessons.forEach((l,index)=>{
 const checked=l.cards.filter(c=>c.checked).length;
@@ -1509,6 +1518,14 @@ function renderAchievements(){
 
 function events(){
 $('openGlobalSearch').onclick=openGlobalSearch;
+$('globalSearchLesson').onchange=renderGlobalSearch;
+$('globalSearchSort').onchange=renderGlobalSearch;
+$('openSmartLearning').onclick=openSmartLearning;
+$('closeSmartLearning').onclick=()=>$('smartLearningDialog').close();
+$('startSmartSession').onclick=()=>DhSmartLearning.startPriority();
+$('startDueSession').onclick=()=>DhSmartLearning.startDue();
+$('startHardSession').onclick=()=>DhSmartLearning.startHard();
+$('startUncheckedSession').onclick=()=>DhSmartLearning.startUnchecked();
 $('closeGlobalSearch').onclick=()=>$('globalSearchDialog').close();
 $('globalSearchInput').oninput=renderGlobalSearch;
 document.querySelectorAll('[data-global-filter]').forEach(button=>{

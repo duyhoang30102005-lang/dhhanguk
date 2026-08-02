@@ -28,7 +28,7 @@
   <header class="app-header">
     <div>
       <h1><img class="brand-mark" src="icon-192.png" alt="">Dh한국</h1>
-      <p id="headerSub">V10.3 Modular Foundation</p>
+      <p id="headerSub">V10.4 Smart Learning</p>
     </div>
     <div class="header-actions">
       <button class="icon-button" id="darkMode">🌙</button>
@@ -40,7 +40,7 @@
   <main>
     <section class="view active" id="homeView">
       <div class="hero">
-        <p class="eyebrow">DH HANGUK · VERSION 10.3</p>
+        <p class="eyebrow">DH HANGUK · VERSION 10.4</p>
         <h2 id="greeting">안녕하세요! Học thông minh hơn mỗi ngày</h2>
         <p>Learn Korean Smarter Every Day. · OCR, SRS, Quiz Pro và quản lý bài học.</p>
       </div>
@@ -115,6 +115,7 @@
         <button id="openAchievements"><span>🏆</span><b>Thành tích</b><small id="achievementCount">0 huy hiệu</small></button>
         <button id="openReminder"><span>🔔</span><b>Nhắc học</b><small id="reminderSummary">Chưa đặt</small></button>
         <button id="checkDataHealth"><span>🛡️</span><b>Kiểm tra dữ liệu</b><small id="dataHealthSummary">Sẵn sàng</small></button>
+        <button id="openSmartLearning"><span>🎯</span><b>Học thông minh</b><small id="smartLearningSummary">Đang phân tích</small></button>
       </div>
     </section>
 
@@ -343,6 +344,22 @@
     <button data-global-filter="unchecked">Chưa check</button>
   </div>
 
+  <div class="global-search-options">
+    <label>Bài học
+      <select id="globalSearchLesson">
+        <option value="all">Tất cả bài học</option>
+      </select>
+    </label>
+    <label>Sắp xếp
+      <select id="globalSearchSort">
+        <option value="relevance">Phù hợp nhất</option>
+        <option value="korean">Tiếng Hàn A–Z</option>
+        <option value="meaning">Nghĩa A–Z</option>
+        <option value="lesson">Theo bài học</option>
+      </select>
+    </label>
+  </div>
+
   <p id="globalSearchCount" class="global-search-count">Nhập từ khóa để tìm.</p>
   <div id="globalSearchResults" class="global-search-results"></div>
 </dialog>
@@ -384,6 +401,29 @@
     <button class="close-button" id="closeDataHealth" type="button">×</button>
   </div>
   <div id="dataHealthResults" class="data-health-results"></div>
+</dialog>
+
+
+<dialog id="smartLearningDialog" class="smart-learning-dialog">
+  <div class="dialog-header">
+    <div>
+      <h2>🎯 Học thông minh</h2>
+      <small>Ưu tiên những từ cần học nhất dựa trên dữ liệu hiện tại.</small>
+    </div>
+    <button class="close-button" id="closeSmartLearning" type="button">×</button>
+  </div>
+
+  <div id="smartLearningOverview" class="smart-learning-overview"></div>
+
+  <div class="smart-learning-actions">
+    <button id="startSmartSession" class="primary" type="button">▶️ Bắt đầu phiên học</button>
+    <button id="startDueSession" type="button">🧠 Ôn từ đến hạn</button>
+    <button id="startHardSession" type="button">⭐ Học từ khó</button>
+    <button id="startUncheckedSession" type="button">📘 Học từ chưa check</button>
+  </div>
+
+  <h3>Gợi ý ưu tiên</h3>
+  <div id="smartLearningList" class="smart-learning-list"></div>
 </dialog>
 
 <dialog id="noteDialog">
@@ -478,6 +518,7 @@
 <script src="js/features/global-search.js"></script>
 <script src="js/features/study-reminder.js"></script>
 <script src="js/features/data-health.js"></script>
+<script src="js/features/smart-learning.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
