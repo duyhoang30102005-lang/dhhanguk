@@ -28,7 +28,7 @@
   <header class="app-header">
     <div>
       <h1><img class="brand-mark" src="icon-192.png" alt="">Dh한국</h1>
-      <p id="headerSub">V10.4 Smart Learning</p>
+      <p id="headerSub">V11 Core</p>
     </div>
     <div class="header-actions">
       <button class="icon-button" id="darkMode">🌙</button>
@@ -40,7 +40,7 @@
   <main>
     <section class="view active" id="homeView">
       <div class="hero">
-        <p class="eyebrow">DH HANGUK · VERSION 10.4</p>
+        <p class="eyebrow">DH HANGUK · VERSION 11</p>
         <h2 id="greeting">안녕하세요! Học thông minh hơn mỗi ngày</h2>
         <p>Learn Korean Smarter Every Day. · OCR, SRS, Quiz Pro và quản lý bài học.</p>
       </div>
@@ -59,6 +59,24 @@
 <div class="level-main"><div class="level-head"><b id="levelTitle">Level 1</b><small id="levelXpText">0 / 500 EXP</small></div><div class="progress"><span id="levelProgress" style="width:0%"></span></div></div>
 <div class="longest-streak"><span>🏆</span><small>Dài nhất</small><b id="longestStreak">1 ngày</b></div>
 </section>
+
+      <section class="v11-weekly-card">
+        <div class="v11-weekly-head">
+          <div>
+            <small>Mục tiêu tuần</small>
+            <b id="weeklyGoalText">0 / 100 hoạt động</b>
+          </div>
+          <button id="editWeeklyGoal" type="button">🎯 Điều chỉnh</button>
+        </div>
+        <div class="progress"><span id="weeklyGoalBar" style="width:0%"></span></div>
+        <div class="v11-weekly-stats">
+          <span><b id="weeklyActiveDays">0</b><small>Ngày hoạt động</small></span>
+          <span><b id="weeklyActivityTotal">0</b><small>Tổng hoạt động</small></span>
+          <span><b id="weeklyCompletedLessons">0</b><small>Bài hoàn thành</small></span>
+        </div>
+        <button id="openProgress" class="v11-progress-button" type="button">📈 Xem tiến độ 7 ngày</button>
+      </section>
+
 <div class="dashboard-grid">
         <article><span>📚</span><b id="totalCards">0</b><small>Tổng số từ</small></article>
         <article><span>✅</span><b id="learnedCards">0</b><small>Đã check</small></article>
@@ -113,9 +131,9 @@
         <button id="openReview"><span>🧠</span><b>Ôn SRS hôm nay</b><small id="reviewCount">0 từ đến hạn</small></button>
         <button id="openQuiz"><span>📝</span><b>Quiz nhanh</b><small>30 câu trắc nghiệm</small></button>
         <button id="openAchievements"><span>🏆</span><b>Thành tích</b><small id="achievementCount">0 huy hiệu</small></button>
+        <button id="openLearningProfile"><span>🧭</span><b>Hồ sơ học tập</b><small id="learningProfileSummary">Phân tích tiến độ</small></button>
         <button id="openReminder"><span>🔔</span><b>Nhắc học</b><small id="reminderSummary">Chưa đặt</small></button>
         <button id="checkDataHealth"><span>🛡️</span><b>Kiểm tra dữ liệu</b><small id="dataHealthSummary">Sẵn sàng</small></button>
-        <button id="openSmartLearning"><span>🎯</span><b>Học thông minh</b><small id="smartLearningSummary">Đang phân tích</small></button>
       </div>
     </section>
 
@@ -344,22 +362,6 @@
     <button data-global-filter="unchecked">Chưa check</button>
   </div>
 
-  <div class="global-search-options">
-    <label>Bài học
-      <select id="globalSearchLesson">
-        <option value="all">Tất cả bài học</option>
-      </select>
-    </label>
-    <label>Sắp xếp
-      <select id="globalSearchSort">
-        <option value="relevance">Phù hợp nhất</option>
-        <option value="korean">Tiếng Hàn A–Z</option>
-        <option value="meaning">Nghĩa A–Z</option>
-        <option value="lesson">Theo bài học</option>
-      </select>
-    </label>
-  </div>
-
   <p id="globalSearchCount" class="global-search-count">Nhập từ khóa để tìm.</p>
   <div id="globalSearchResults" class="global-search-results"></div>
 </dialog>
@@ -404,26 +406,66 @@
 </dialog>
 
 
-<dialog id="smartLearningDialog" class="smart-learning-dialog">
+<dialog id="progressDialog" class="progress-dialog">
   <div class="dialog-header">
     <div>
-      <h2>🎯 Học thông minh</h2>
-      <small>Ưu tiên những từ cần học nhất dựa trên dữ liệu hiện tại.</small>
+      <h2>📈 Tiến độ học tập</h2>
+      <small>Hoạt động 7 ngày và tiến độ từng bài học.</small>
     </div>
-    <button class="close-button" id="closeSmartLearning" type="button">×</button>
+    <button class="close-button" id="closeProgress" type="button">×</button>
   </div>
 
-  <div id="smartLearningOverview" class="smart-learning-overview"></div>
+  <section>
+    <h3>7 ngày gần nhất</h3>
+    <div id="weeklyActivityChart" class="weekly-activity-chart"></div>
+  </section>
 
-  <div class="smart-learning-actions">
-    <button id="startSmartSession" class="primary" type="button">▶️ Bắt đầu phiên học</button>
-    <button id="startDueSession" type="button">🧠 Ôn từ đến hạn</button>
-    <button id="startHardSession" type="button">⭐ Học từ khó</button>
-    <button id="startUncheckedSession" type="button">📘 Học từ chưa check</button>
+  <section>
+    <h3>Tiến độ bài học</h3>
+    <div id="lessonProgressList" class="lesson-progress-list"></div>
+  </section>
+</dialog>
+
+<dialog id="weeklyGoalDialog">
+  <div class="dialog-header">
+    <div>
+      <h2>🎯 Mục tiêu tuần</h2>
+      <small>Số hoạt động học, Quiz và OCR bạn muốn hoàn thành.</small>
+    </div>
+    <button class="close-button" id="closeWeeklyGoal" type="button">×</button>
   </div>
 
-  <h3>Gợi ý ưu tiên</h3>
-  <div id="smartLearningList" class="smart-learning-list"></div>
+  <label>Mục tiêu
+    <input id="weeklyGoalInput" type="number" min="10" max="1000" step="10" value="100">
+  </label>
+
+  <div class="dialog-actions">
+    <button id="saveWeeklyGoal" class="primary" type="button">💾 Lưu mục tiêu</button>
+  </div>
+</dialog>
+
+<dialog id="learningProfileDialog" class="learning-profile-dialog">
+  <div class="dialog-header">
+    <div>
+      <h2>🧭 Hồ sơ học tập</h2>
+      <small>Phân tích dựa trên dữ liệu học hiện có trong trình duyệt.</small>
+    </div>
+    <button class="close-button" id="closeLearningProfile" type="button">×</button>
+  </div>
+
+  <div class="learning-profile-hero">
+    <small>Giai đoạn hiện tại</small>
+    <h3 id="profileStage">Mới bắt đầu</h3>
+    <p id="profileAdvice"></p>
+  </div>
+
+  <div class="learning-profile-grid">
+    <article><b id="profileLearned">0%</b><small>Đã check</small></article>
+    <article><b id="profileDue">0</b><small>Đến hạn ôn</small></article>
+    <article><b id="profileHard">0</b><small>Từ khó</small></article>
+    <article><b id="profileFavorites">0</b><small>Yêu thích</small></article>
+    <article><b id="profileExampleCoverage">0%</b><small>Có ví dụ</small></article>
+  </div>
 </dialog>
 
 <dialog id="noteDialog">
@@ -518,7 +560,8 @@
 <script src="js/features/global-search.js"></script>
 <script src="js/features/study-reminder.js"></script>
 <script src="js/features/data-health.js"></script>
-<script src="js/features/smart-learning.js"></script>
+<script src="js/features/v11-dashboard.js"></script>
+<script src="js/features/learning-profile.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

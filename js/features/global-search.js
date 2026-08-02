@@ -31,8 +31,6 @@ window.DhGlobalSearch=(()=>{
     const $=context.$;
     const query=$('globalSearchInput').value.trim();
     const filter=localStorage.getItem(FILTER_KEY)||'all';
-    const lessonFilter=$('globalSearchLesson')?.value||'all';
-    const sort=$('globalSearchSort')?.value||'relevance';
     const resultsContainer=$('globalSearchResults');
 
     if(!query){
@@ -46,15 +44,6 @@ window.DhGlobalSearch=(()=>{
     if(filter==='favorites')results=results.filter(item=>item.card.favorite);
     if(filter==='hard')results=results.filter(item=>item.card.hard);
     if(filter==='unchecked')results=results.filter(item=>!item.card.checked);
-    if(lessonFilter!=='all')results=results.filter(item=>item.lessonId===lessonFilter);
-
-    if(sort==='korean'){
-      results.sort((a,b)=>String(a.card.ko||'').localeCompare(String(b.card.ko||''),'ko'));
-    }else if(sort==='meaning'){
-      results.sort((a,b)=>String(a.card.meaning||'').localeCompare(String(b.card.meaning||''),'vi'));
-    }else if(sort==='lesson'){
-      results.sort((a,b)=>String(a.lessonTitle||'').localeCompare(String(b.lessonTitle||''),'vi'));
-    }
 
     $('globalSearchCount').textContent=`Tìm thấy ${results.length} kết quả`;
 
@@ -91,12 +80,6 @@ window.DhGlobalSearch=(()=>{
   function open(){
     const $=ctx().$;
     $('globalSearchInput').value='';
-
-    if($('globalSearchLesson')){
-      $('globalSearchLesson').innerHTML=
-        '<option value="all">Tất cả bài học</option>'+
-        ctx().getLessons().map(item=>`<option value="${item.id}">${item.title}</option>`).join('');
-    }
     const filter=localStorage.getItem(FILTER_KEY)||'all';
 
     document.querySelectorAll('[data-global-filter]').forEach(button=>{

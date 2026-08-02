@@ -555,15 +555,19 @@ function openDataHealth(){
 }
 
 
-function renderSmartLearningSummary(){
-  return window.DhSmartLearning.renderSummary();
+function renderV11Dashboard(){
+  if(window.DhV11Dashboard)DhV11Dashboard.render();
 }
 
-function openSmartLearning(){
-  return window.DhSmartLearning.open();
+function openV11Progress(){
+  if(window.DhV11Dashboard)DhV11Dashboard.openProgress();
 }
 
-function renderHome(){renderDailyGoal();renderLevel();renderDailyChallenge();renderReminderSummary();renderSmartLearningSummary();
+function openLearningProfile(){
+  if(window.DhLearningProfile)DhLearningProfile.open();
+}
+
+function renderHome(){renderDailyGoal();renderLevel();renderDailyChallenge();renderReminderSummary();renderV11Dashboard();
 const list=$('lessonList');list.innerHTML='';
 lessons.forEach((l,index)=>{
 const checked=l.cards.filter(c=>c.checked).length;
@@ -1517,15 +1521,14 @@ function renderAchievements(){
 }
 
 function events(){
+$('openProgress').onclick=openV11Progress;
+$('closeProgress').onclick=()=>$('progressDialog').close();
+$('editWeeklyGoal').onclick=()=>DhV11Dashboard.openGoal();
+$('closeWeeklyGoal').onclick=()=>$('weeklyGoalDialog').close();
+$('saveWeeklyGoal').onclick=()=>{DhV11Dashboard.saveGoal();$('weeklyGoalDialog').close();};
+$('openLearningProfile').onclick=openLearningProfile;
+$('closeLearningProfile').onclick=()=>$('learningProfileDialog').close();
 $('openGlobalSearch').onclick=openGlobalSearch;
-$('globalSearchLesson').onchange=renderGlobalSearch;
-$('globalSearchSort').onchange=renderGlobalSearch;
-$('openSmartLearning').onclick=openSmartLearning;
-$('closeSmartLearning').onclick=()=>$('smartLearningDialog').close();
-$('startSmartSession').onclick=()=>DhSmartLearning.startPriority();
-$('startDueSession').onclick=()=>DhSmartLearning.startDue();
-$('startHardSession').onclick=()=>DhSmartLearning.startHard();
-$('startUncheckedSession').onclick=()=>DhSmartLearning.startUnchecked();
 $('closeGlobalSearch').onclick=()=>$('globalSearchDialog').close();
 $('globalSearchInput').oninput=renderGlobalSearch;
 document.querySelectorAll('[data-global-filter]').forEach(button=>{
