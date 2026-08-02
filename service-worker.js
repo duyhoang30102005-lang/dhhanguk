@@ -1,5 +1,5 @@
 
-const CACHE = 'dh-hanguk-v11.3-learning-focus';
+const CACHE = 'dh-hanguk-v11.4-word-editor-pro';
 const ASSETS = [
   './',
   'index.html',

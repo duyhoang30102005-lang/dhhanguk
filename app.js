@@ -755,10 +755,25 @@ function applySearch(q){
 function speak(t){if(!speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.split('/')[0]);u.lang='ko-KR';u.rate=.82;speechSynthesis.speak(u)}
 function fillLessons(){const s=$('fieldLesson');s.innerHTML='';lessons.forEach(l=>{const o=document.createElement('option');o.value=l.id;o.textContent=l.title;s.append(o)})}
 function fill(c={}){fillLessons();$('fieldLesson').value=c.lessonId||currentLessonId||lessons[0]?.id;[['fieldKo','ko'],['fieldPron','pron'],['fieldMeaning','meaning'],['fieldExampleKo','example_ko'],['fieldExampleVi','example_vi'],['fieldTip','tip'],['fieldDialogKo','dialog_ko'],['fieldDialogVi','dialog_vi']].forEach(([a,b])=>$(a).value=c[b]||'')}
-function editor(add){adding=add;$('editorTitle').textContent=add?'＋ Thêm từ mới':'✏️ Sửa flashcard';fill(add?{}:{...current(),lessonId:currentLessonId});$('editorDialog').showModal()}
+function editor(add){
+adding=add;
+$('editorTitle').textContent=add?'＋ Thêm từ mới':'✏️ Sửa flashcard';
+fill(add?{}:{...current(),lessonId:currentLessonId});
+if(window.DhWordEditor)DhWordEditor.open();
+$('editorDialog').showModal()
+}
 async function saveEditor(){const ko=$('fieldKo').value.trim();if(!ko)return alert('Hãy nhập từ vựng tiếng Hàn');const targetId=$('fieldLesson').value,target=lessons.find(l=>l.id===targetId);const d={ko,pron:$('fieldPron').value.trim(),meaning:$('fieldMeaning').value.trim(),example_ko:$('fieldExampleKo').value.trim(),example_vi:$('fieldExampleVi').value.trim(),tip:$('fieldTip').value.trim(),dialog_ko:$('fieldDialogKo').value.trim(),dialog_vi:$('fieldDialogVi').value.trim()};
 if(adding){target.cards.push({id:`card-${Date.now()}`,...d,checked:false,hard:false,favorite:false,order:target.cards.length+1})}else{const old=lesson(),idx=old.cards.findIndex(c=>c.id===current().id),keep={checked:current().checked,hard:current().hard,favorite:current().favorite,id:current().id,order:current().order};old.cards.splice(idx,1);target.cards.push({...d,...keep})}
-await putAllLessons(lessons);currentLessonId=targetId;filteredIds=target.cards.map(c=>c.id);position=Math.max(0,target.cards.length-1);$('editorDialog').close();render();renderList()}
+await putAllLessons(lessons);
+createAutoBackup();
+if(window.DhWordEditor)DhWordEditor.saved();
+currentLessonId=targetId;
+filteredIds=target.cards.map(c=>c.id);
+position=Math.max(0,target.cards.length-1);
+$('editorDialog').close();
+render();
+renderList()
+}
 function renderList(){const q=$('listSearch').value.trim().toLowerCase(),list=$('wordList');list.innerHTML='';let m=allCards().filter(c=>DhV9.smartSearchMatch(c,q)||DhV9.normalize(c.lessonTitle).includes(DhV9.normalize(q)));if(listMode==='favorites')m=m.filter(c=>c.favorite);if(listMode==='hard')m=m.filter(c=>c.hard);if(listMode==='unchecked')m=m.filter(c=>!c.checked);if(!m.length){list.innerHTML='<div class="empty">Không có từ phù hợp</div>';return}m.forEach(c=>{const row=document.createElement('div');row.className='word-row';const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!c.checked;cb.onchange=async()=>{const l=lessons.find(x=>x.id===c.lessonId),x=l.cards.find(x=>x.id===c.id);x.checked=cb.checked;await putLesson(l);renderHome()};const main=document.createElement('div');main.className='word-main';main.innerHTML=`<b>${c.ko}</b><span>${c.pron} · ${c.meaning} · ${c.lessonTitle}</span>`;const a=document.createElement('div');a.className='row-actions';const e=document.createElement('button');e.textContent='✏️';e.onclick=()=>{currentLessonId=c.lessonId;filteredIds=lesson().cards.map(x=>x.id);position=lesson().cards.findIndex(x=>x.id===c.id);editor(false)};const d=document.createElement('button');d.textContent='🗑️';d.className='danger-button';d.onclick=async()=>{if(confirm(`Xóa “${c.ko}”?`)){const l=lessons.find(x=>x.id===c.lessonId);l.cards=l.cards.filter(x=>x.id!==c.id);await putLesson(l);renderList();renderHome()}};a.append(e,d);row.append(cb,main,a);list.append(row)})}
 function exportData(){
 const payload=createBackup(lessons);

@@ -28,7 +28,7 @@
   <header class="app-header">
     <div>
       <h1><img class="brand-mark" src="icon-192.png" alt="">Dh한국</h1>
-      <p id="headerSub">V11.3 Learning Focus</p>
+      <p id="headerSub">V11.4 Word Editor Pro</p>
     </div>
     <div class="header-actions">
       <button class="icon-button" id="darkMode">🌙</button>
@@ -40,7 +40,7 @@
   <main>
     <section class="view active" id="homeView">
       <div class="hero">
-        <p class="eyebrow">DH HANGUK · VERSION 11.3</p>
+        <p class="eyebrow">DH HANGUK · VERSION 11.4</p>
         <h2 id="greeting">안녕하세요! Học thông minh hơn mỗi ngày</h2>
         <p>Learn Korean Smarter Every Day. · OCR, SRS, Quiz Pro và quản lý bài học.</p>
       </div>
@@ -309,21 +309,54 @@
   </nav>
 </div>
 
-<dialog id="editorDialog">
+
+<dialog id="editorDialog" class="word-editor-dialog">
   <form method="dialog" id="editorForm">
-    <div class="dialog-header"><h2 id="editorTitle">Sửa flashcard</h2><button class="close-button" value="cancel">×</button></div>
-    <label>Bài học<select id="fieldLesson"></select></label>
-    <label>Từ vựng<input id="fieldKo" required></label>
-    <label>Phiên âm<input id="fieldPron"></label>
-    <label>Nghĩa tiếng Việt<textarea id="fieldMeaning"></textarea></label>
-    <label>Ví dụ tiếng Hàn<textarea id="fieldExampleKo"></textarea></label>
-    <label>Dịch ví dụ<textarea id="fieldExampleVi"></textarea></label>
-    <label>Mẹo / Lưu ý<textarea id="fieldTip"></textarea></label>
-    <label>Hội thoại tiếng Hàn<textarea id="fieldDialogKo"></textarea></label>
-    <label>Dịch hội thoại<textarea id="fieldDialogVi"></textarea></label>
-    <div class="dialog-actions"><button value="cancel" class="secondary">Hủy</button><button type="button" id="saveCard" class="primary">💾 Lưu</button></div>
+    <div class="dialog-header">
+      <div>
+        <h2 id="editorTitle">Sửa flashcard</h2>
+        <small id="editorDraftStatus">Không có bản nháp</small>
+      </div>
+      <button class="close-button" value="cancel">×</button>
+    </div>
+
+    <div class="word-editor-layout">
+      <section class="word-editor-fields">
+        <label>Bài học<select id="fieldLesson"></select></label>
+        <label>Từ vựng<input id="fieldKo" required></label>
+        <p id="editorDuplicateWarning" class="editor-duplicate-warning" hidden></p>
+        <label>Phiên âm<input id="fieldPron"></label>
+        <label>Nghĩa tiếng Việt<textarea id="fieldMeaning"></textarea></label>
+        <label>Ví dụ tiếng Hàn<textarea id="fieldExampleKo"></textarea></label>
+        <label>Dịch ví dụ<textarea id="fieldExampleVi"></textarea></label>
+        <label>Mẹo / Lưu ý<textarea id="fieldTip"></textarea></label>
+        <label>Hội thoại tiếng Hàn<textarea id="fieldDialogKo"></textarea></label>
+        <label>Dịch hội thoại<textarea id="fieldDialogVi"></textarea></label>
+      </section>
+
+      <aside class="word-editor-preview">
+        <small>Xem trước flashcard</small>
+        <article>
+          <h3 id="editorPreviewKo">단어</h3>
+          <p id="editorPreviewPron">Phiên âm</p>
+          <b id="editorPreviewMeaning">Nghĩa tiếng Việt</b>
+          <div class="editor-preview-example">
+            <span id="editorPreviewExampleKo">Ví dụ tiếng Hàn</span>
+            <small id="editorPreviewExampleVi">Dịch ví dụ</small>
+          </div>
+        </article>
+      </aside>
+    </div>
+
+    <div class="dialog-actions word-editor-actions">
+      <button type="button" id="restoreEditorDraft" class="secondary">↩️ Khôi phục nháp</button>
+      <button type="button" id="clearEditorDraft" class="secondary">🧹 Xóa nháp</button>
+      <button value="cancel" class="secondary">Hủy</button>
+      <button type="button" id="saveCard" class="primary">💾 Lưu</button>
+    </div>
   </form>
 </dialog>
+
 
 <dialog id="lessonDialog">
   <form method="dialog">
@@ -620,6 +653,7 @@
 <script src="js/features/data-lock.js"></script>
 <script src="js/features/data-source-info.js"></script>
 <script src="js/features/learning-focus.js"></script>
+<script src="js/features/word-editor.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
