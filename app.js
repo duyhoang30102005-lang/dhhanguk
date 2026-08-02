@@ -170,7 +170,22 @@ function setupInstallPrompt(){
 }
 
 function dateKey(date=new Date()){
-  return date.toISOString().slice(0,10);
+  const year=date.getFullYear();
+  const month=String(date.getMonth()+1).padStart(2,'0');
+  const day=String(date.getDate()).padStart(2,'0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseLocalDateKey(key){
+  const [year,month,day]=String(key||'').split('-').map(Number);
+  return year&&month&&day ? new Date(year,month-1,day) : null;
+}
+
+function dayDifference(fromKey,toKey){
+  const from=parseLocalDateKey(fromKey);
+  const to=parseLocalDateKey(toKey);
+  if(!from||!to)return null;
+  return Math.round((to-from)/86400000);
 }
 
 function getActivityLog(){
@@ -521,15 +536,57 @@ list.append(wrap)
 const a=allCards(),learned=a.filter(c=>c.checked).length,review=a.filter(c=>!c.checked).length;
 $('hardCount').textContent=`${a.filter(c=>c.hard).length} từ`;$('favoriteCount').textContent=`${a.filter(c=>c.favorite).length} từ`;$('reviewCount').textContent=`${dueCards().length} từ đến hạn`;
 $('totalCards').textContent=a.length;$('learnedCards').textContent=learned;$('reviewCards').textContent=review;
-const today=new Date().toISOString().slice(0,10),last=localStorage.getItem('km-last-open'),streak=Number(localStorage.getItem('km-streak')||1);
-if(last!==today){localStorage.setItem('km-last-open',today);localStorage.setItem('km-streak',String(last?streak+1:1))}
-$('streakDays').textContent=localStorage.getItem('km-streak')||'1';const ac=calculateAchievements();if($('achievementCount'))$('achievementCount').textContent=`${ac.filter(x=>x.unlocked).length} huy hiệu`;
+const today=dateKey();
+const last=localStorage.getItem('km-last-open');
+let streak=Number(localStorage.getItem('km-streak')||0);
+
+if(last!==today){
+  const gap=last ? dayDifference(last,today) : null;
+  streak=gap===1 ? Math.max(1,streak)+1 : 1;
+  localStorage.setItem('km-last-open',today);
+  localStorage.setItem('km-streak',String(streak));
+}
+
+$('streakDays').textContent=String(streak||1);const ac=calculateAchievements();if($('achievementCount'))$('achievementCount').textContent=`${ac.filter(x=>x.unlocked).length} huy hiệu`;
 renderReview();renderStats();
 }
-function openLesson(id,mode='all'){currentLessonId=id;let cs=lesson().cards;if(mode==='hard')cs=cs.filter(c=>c.hard);if(mode==='favorites')cs=cs.filter(c=>c.favorite);if(mode==='unchecked')cs=cs.filter(c=>!c.checked);filteredIds=cs.map(c=>c.id);position=0;showView('studyView');render()}
+function openLesson(id,mode='all'){
+currentLessonId=id;
+const selectedLesson=lesson();
+if(!selectedLesson){
+  alert('Không tìm thấy bài học này.');
+  showView('homeView');
+  return;
+}
+let cs=selectedLesson.cards;if(mode==='hard')cs=cs.filter(c=>c.hard);if(mode==='favorites')cs=cs.filter(c=>c.favorite);if(mode==='unchecked')cs=cs.filter(c=>!c.checked);filteredIds=cs.map(c=>c.id);position=0;showView('studyView');render()}
 function render(){renderHome();const c=current();if(!c){$('korean').textContent='Không có từ';$('pronunciation').textContent='';$('meaning').textContent='';return}$('korean').textContent=c.ko;$('pronunciation').textContent=c.pron;$('meaning').textContent=c.meaning;$('exampleKo').textContent=c.example_ko;$('exampleVi').textContent='→ '+c.example_vi;$('tip').textContent=c.tip;$('dialogKo').textContent=c.dialog_ko;$('dialogVi').textContent=c.dialog_vi;$('counter').textContent=`${position+1} / ${filteredIds.length}`;const l=lesson(),n=l.cards.filter(x=>x.checked).length;$('checkedSummary').textContent=`Đã check: ${n} / ${l.cards.length}`;$('progressBar').style.width=`${n/Math.max(l.cards.length,1)*100}%`;$('favorite').textContent=c.favorite?'♥ Yêu thích':'♡ Yêu thích';$('favorite').classList.toggle('active',c.favorite);$('hard').textContent=c.hard?'★ Từ khó':'☆ Từ khó';$('hard').classList.toggle('hard',c.hard);$('checked').textContent=c.checked?'✓ Đã check':'✓ Chưa check';$('checked').classList.toggle('done',c.checked);$('flashcard').classList.remove('flipped');if($('srsDueInfo'))$('srsDueInfo').textContent=formatDue(ensureSrs(c).due)}
-async function saveLessonState(){await putLesson(lesson());renderHome()}async function update(ch){Object.assign(current(),ch);await saveLessonState();render()}
-function applySearch(q){filteredIds=lesson().cards.filter(c=>DhV9.smartSearchMatch(c,q)).map(c=>c.id);position=0;render()}
+async function saveLessonState(){
+  const selectedLesson=lesson();
+  if(!selectedLesson)return;
+  await putLesson(selectedLesson);
+  renderHome();
+}
+async function update(ch){
+  const card=current();
+  if(!card)return;
+  Object.assign(card,ch);
+  await saveLessonState();
+  render();
+}
+function applySearch(q){
+  const selectedLesson=lesson();
+  if(!selectedLesson){
+    filteredIds=[];
+    position=0;
+    render();
+    return;
+  }
+  filteredIds=selectedLesson.cards
+    .filter(card=>window.DhV9 ? DhV9.smartSearchMatch(card,q) : `${card.ko} ${card.pron} ${card.meaning}`.toLowerCase().includes(String(q||'').toLowerCase()))
+    .map(card=>card.id);
+  position=0;
+  render();
+}
 function speak(t){if(!speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.split('/')[0]);u.lang='ko-KR';u.rate=.82;speechSynthesis.speak(u)}
 function fillLessons(){const s=$('fieldLesson');s.innerHTML='';lessons.forEach(l=>{const o=document.createElement('option');o.value=l.id;o.textContent=l.title;s.append(o)})}
 function fill(c={}){fillLessons();$('fieldLesson').value=c.lessonId||currentLessonId||lessons[0]?.id;[['fieldKo','ko'],['fieldPron','pron'],['fieldMeaning','meaning'],['fieldExampleKo','example_ko'],['fieldExampleVi','example_vi'],['fieldTip','tip'],['fieldDialogKo','dialog_ko'],['fieldDialogVi','dialog_vi']].forEach(([a,b])=>$(a).value=c[b]||'')}
@@ -542,7 +599,7 @@ function exportData(){
 const payload=createBackup(lessons);
 const b=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
 const u=URL.createObjectURL(b),a=document.createElement('a');
-a.href=u;a.download=`Korean_Master_Backup_${new Date().toISOString().slice(0,10)}.kmdata`;
+a.href=u;a.download=`DhHanguk_Backup_${dateKey()}.kmdata`;
 a.click();URL.revokeObjectURL(u)
 }
 async function importData(f){
@@ -1277,7 +1334,7 @@ function startQuiz(mode){
   };
 
   if($('quizMode'))$('quizMode').value=selectedMode;
-  updateQuizBestScore();if($('quizCombo'))$('quizCombo').textContent='🔥 Combo 0';DhV10.renderQuizHistory($('quizHistory'));
+  updateQuizBestScore();if($('quizCombo'))$('quizCombo').textContent='🔥 Combo 0';if(window.DhV10)DhV10.renderQuizHistory($('quizHistory'));
   showView('quizView');
   startQuizTimer();
   renderQuizQuestion();
@@ -1290,8 +1347,10 @@ function renderQuizQuestion(){
   if(!q){
     stopQuizTimer();saveQuizBestScore();
     const accuracy=Math.round(quizState.score/Math.max(total,1)*100);
-    DhV10.saveQuizResult({score:quizState.score,total,mode:quizState.mode,accuracy,bestCombo:quizState.bestCombo});
-    DhV10.renderQuizHistory($('quizHistory'));
+    if(window.DhV10){
+      DhV10.saveQuizResult({score:quizState.score,total,mode:quizState.mode,accuracy,bestCombo:quizState.bestCombo});
+      DhV10.renderQuizHistory($('quizHistory'));
+    }
     if($('quizAccuracy'))$('quizAccuracy').textContent=`Độ chính xác: ${accuracy}% · Combo tốt nhất: ${quizState.bestCombo}`;
 
     $('quizProgress').textContent='Hoàn thành';
@@ -1399,7 +1458,7 @@ $('srsAgain').onclick=()=>gradeCurrentCard('again');
 $('srsHard').onclick=()=>gradeCurrentCard('hard');
 $('srsGood').onclick=()=>gradeCurrentCard('good');
 $('srsEasy').onclick=()=>gradeCurrentCard('easy');
-$('openQuiz').onclick=()=>{DhV10.renderQuizHistory($('quizHistory'));startQuiz('all')};
+$('openQuiz').onclick=()=>{if(window.DhV10)DhV10.renderQuizHistory($('quizHistory'));startQuiz('all')};
 $('restartQuiz').onclick=()=>startQuiz($('quizMode').value);
 $('quizMode').onchange=updateQuizBestScore;$('quizCount').onchange=updateQuizBestScore;
 $('openAchievements').onclick=()=>{renderAchievements();showView('achievementsView')};
@@ -1426,12 +1485,52 @@ $('saveOcrCards').onclick=saveOcrCards;
 
 document.querySelectorAll('.bottom-nav button').forEach(btn=>btn.onclick=()=>{const v=btn.dataset.view;if(v==='studyView'&&(!filteredIds.length)){currentLessonId=lessons[0]?.id;filteredIds=lesson()?.cards.map(c=>c.id)||[];position=0;render()}if(v==='reviewView')renderReview();if(v==='statsView')renderStats();if(v==='manageView'){listMode='all';renderList()}showView(v);document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.toggle('active',x===btn))});
 
-$('backHome').onclick=()=>showView('homeView');$('manageBack').onclick=()=>showView('homeView');$('openAllCards').onclick=()=>{currentLessonId=lessons[0].id;openLesson(currentLessonId)};
+$('backHome').onclick=()=>showView('homeView');
+$('manageBack').onclick=()=>showView('homeView');
+$('openAllCards').onclick=()=>{
+  const firstLesson=lessons[0];
+  if(!firstLesson){
+    alert('Chưa có bài học. Hãy tạo bài học đầu tiên trong mục Quản lý.');
+    return;
+  }
+  currentLessonId=firstLesson.id;
+  openLesson(currentLessonId);
+};
 $('openManage').onclick=()=>{listMode='all';renderList();showView('manageView')};$('openHard').onclick=()=>{listMode='hard';renderList();showView('manageView')};$('openFavorites').onclick=()=>{listMode='favorites';renderList();showView('manageView')};$('openReview').onclick=()=>{listMode='unchecked';renderList();showView('manageView')};
 $('addLesson').onclick=()=>openLessonDialog();$('saveLesson').onclick=saveLessonDialog;
 $('manageAdd').onclick=()=>editor(true);$('addCard').onclick=()=>editor(true);$('editCard').onclick=()=>editor(false);$('saveCard').onclick=saveEditor;
-$('flashcard').onclick=e=>{if(!e.target.closest('button'))$('flashcard').classList.toggle('flipped')};$('previous').onclick=()=>{position=(position-1+filteredIds.length)%filteredIds.length;render()};$('next').onclick=()=>{position=(position+1)%filteredIds.length;render()};
-$('speakFront').onclick=e=>{e.stopPropagation();speak(current().ko)};$('speakBack').onclick=e=>{e.stopPropagation();speak(current().ko)};$('favorite').onclick=()=>update({favorite:!current().favorite});$('hard').onclick=()=>update({hard:!current().hard});$('checked').onclick=()=>update({checked:!current().checked});
+$('flashcard').onclick=e=>{if(!e.target.closest('button'))$('flashcard').classList.toggle('flipped')};$('previous').onclick=()=>{
+  if(!filteredIds.length)return;
+  position=(position-1+filteredIds.length)%filteredIds.length;
+  render();
+};
+$('next').onclick=()=>{
+  if(!filteredIds.length)return;
+  position=(position+1)%filteredIds.length;
+  render();
+};
+$('speakFront').onclick=e=>{
+  e.stopPropagation();
+  const card=current();
+  if(card)speak(card.ko);
+};
+$('speakBack').onclick=e=>{
+  e.stopPropagation();
+  const card=current();
+  if(card)speak(card.ko);
+};
+$('favorite').onclick=()=>{
+  const card=current();
+  if(card)update({favorite:!card.favorite});
+};
+$('hard').onclick=()=>{
+  const card=current();
+  if(card)update({hard:!card.hard});
+};
+$('checked').onclick=()=>{
+  const card=current();
+  if(card)update({checked:!card.checked});
+};
 $('search').oninput=e=>applySearch(e.target.value);$('showAll').onclick=()=>{filteredIds=lesson().cards.map(c=>c.id);position=0;render()};$('listSearch').oninput=renderList;$('toggleAll').onclick=async()=>{const all=allCards().every(c=>c.checked);lessons.forEach(l=>l.cards.forEach(c=>c.checked=!all));await putAllLessons(lessons);renderList();renderHome()};
 document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{listMode=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));renderList()});
 $('backupBtn').onclick=()=>{updateAutoBackupInfo();$('backupDialog').showModal()};$('closeBackup').onclick=()=>$('backupDialog').close();$('exportData').onclick=exportData;$('importData').onclick=()=>$('importFile').click();$('importFile').onchange=e=>{if(e.target.files[0])importData(e.target.files[0])};

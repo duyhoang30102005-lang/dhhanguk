@@ -3,6 +3,13 @@ window.DhV10=(()=>{
   const QUIZ_HISTORY='dh-v10-quiz-history';
   const CHALLENGE='dh-v10-challenge';
 
+  function localDateKey(date=new Date()){
+    const year=date.getFullYear();
+    const month=String(date.getMonth()+1).padStart(2,'0');
+    const day=String(date.getDate()).padStart(2,'0');
+    return `${year}-${month}-${day}`;
+  }
+
   function getQuizHistory(){
     try{
       return JSON.parse(localStorage.getItem(QUIZ_HISTORY)||'[]');
@@ -85,7 +92,7 @@ window.DhV10=(()=>{
       const date=new Date();
       date.setDate(date.getDate()-offset);
 
-      const item=log[date.toISOString().slice(0,10)];
+      const item=log[localDateKey(date)];
 
       if(item){
         const total=(item.study||0)+(item.quiz||0)+(item.ocr||0);
@@ -102,7 +109,7 @@ window.DhV10=(()=>{
   }
 
   function dailyChallenge(){
-    const today=new Date().toISOString().slice(0,10);
+    const today=localDateKey();
     let data={};
 
     try{
